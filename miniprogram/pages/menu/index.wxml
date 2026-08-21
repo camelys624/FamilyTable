@@ -1,0 +1,92 @@
+<view class="page-shell menu-page">
+  <view class="menu-heading">
+    <view>
+      <text class="eyebrow">这一周 · 慢慢安排</text>
+      <view class="page-title">家的菜单簿</view>
+    </view>
+    <view class="week-stamp">第 {{weekNumber}} 周</view>
+  </view>
+
+  <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
+    <text class="cloud-error-title">云端菜单暂时不可用</text>
+    <text class="cloud-error-message">{{loadError}}</text>
+    <text class="cloud-error-help">请先在微信开发者工具部署 menu、recipe 云函数并初始化数据库。</text>
+    <button class="secondary-button cloud-error-retry" bindtap="retryLoad">重新加载</button>
+  </view>
+
+  <scroll-view scroll-x class="day-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="day-list">
+      <view
+        wx:for="{{days}}"
+        wx:key="key"
+        class="day-tab {{selectedIndex === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        bindtap="selectDay"
+      >
+        <text class="day-week">{{item.weekday}}</text>
+        <text class="day-date">{{item.dateLabel}}</text>
+        <view class="day-dot" wx:if="{{item.breakfast.length + item.lunch.length + item.dinner.length > 0}}"></view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="selected-line">
+    <text>{{selectedDate}} 的餐桌</text>
+    <text class="subtle">点菜签右上角可移除</text>
+  </view>
+
+  <view class="meal-book">
+    <view class="meal-row" wx:for="{{meals}}" wx:key="key">
+      <view class="meal-label">
+        <text class="meal-name">{{item.label}}</text>
+        <text class="meal-hint">{{item.hint}}</text>
+      </view>
+      <view class="dish-list">
+        <view
+          wx:for="{{item.items}}"
+          wx:for-item="dish"
+          wx:key="id"
+          class="dish-ticket {{dish.recipe.tone}}"
+        >
+          <view class="ticket-pin"></view>
+          <view class="ticket-remove" data-id="{{dish.id}}" bindtap="removeRecipe">×</view>
+          <text class="ticket-name">{{dish.recipe.name}}</text>
+          <text class="ticket-meta">{{dish.recipe.duration}} 分钟</text>
+        </view>
+        <view class="empty-meal" wx:if="{{!item.items.length}}">这一餐还空着</view>
+        <view class="add-dish" data-meal="{{item.key}}" bindtap="openPicker">
+          <text class="add-plus">＋</text>
+          <text>添一道</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="repeat-note" wx:if="{{repeatName}}">
+    <view class="note-mark">!</view>
+    <text>{{repeatName}}本周出现过 {{repeatCount}} 次。家常菜可以重复，也可以换个口味。</text>
+  </view>
+</view>
+
+<view class="picker-mask" wx:if="{{pickerVisible}}" bindtap="closePicker"></view>
+<view class="recipe-picker {{pickerVisible ? 'visible' : ''}}">
+  <view class="picker-handle"></view>
+  <view class="picker-header">
+    <view>
+      <text class="eyebrow">添到{{pickerMealLabel}}</text>
+      <view class="picker-title">从菜谱簿里选</view>
+    </view>
+    <text class="picker-close" bindtap="closePicker">关闭</text>
+  </view>
+  <scroll-view scroll-y class="picker-list">
+    <view wx:for="{{recipes}}" wx:key="id" class="picker-recipe" data-id="{{item.id}}" bindtap="chooseRecipe">
+      <view class="recipe-swatch {{item.tone}}">{{item.initial}}</view>
+      <view class="picker-copy">
+        <text class="picker-name">{{item.name}}</text>
+        <text class="picker-meta">{{item.category}} · {{item.duration}} 分钟</text>
+      </view>
+      <text class="picker-add">＋</text>
+    </view>
+    <view class="picker-empty" wx:if="{{!recipes.length}}">菜谱簿还是空的，先去记一道家常菜吧。</view>
+  </scroll-view>
+</view>

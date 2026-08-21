@@ -1,0 +1,47 @@
+<view class="page-shell vote-page safe-bottom">
+  <view class="vote-heading">
+    <text class="eyebrow">今晚 17:30 截止</text>
+    <view class="page-title">晚餐听谁的？</view>
+    <text class="subtle">每人一票。票数最高的菜，会出现在今晚菜单建议里。</text>
+  </view>
+
+  <view class="voter-row">
+    <view wx:for="{{voters}}" wx:key="name" class="voter-avatar {{item.tone}}">{{item.initial}}</view>
+    <text>{{participantCount}} 位家人已参与 · 共 {{totalVotes}} 票</text>
+  </view>
+
+  <view class="candidate-list">
+    <view wx:for="{{candidates}}" wx:key="id" class="vote-card paper-card {{item.selected ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="vote">
+      <view class="candidate-dish {{item.tone}}">
+        <text>{{item.initial}}</text>
+        <view class="selected-seal" wx:if="{{item.selected}}">我的票</view>
+      </view>
+      <view class="candidate-main">
+        <view class="candidate-topline">
+          <view>
+            <text class="candidate-name">{{item.name}}</text>
+            <text class="candidate-meta">{{item.duration}} 分钟 · {{item.difficulty}}</text>
+          </view>
+          <text class="vote-number">{{item.votes}} 票</text>
+        </view>
+        <view class="vote-track">
+          <view class="vote-fill" style="width: {{item.percent}}%;"></view>
+        </view>
+        <view class="vote-bottom">
+          <text>{{item.note}}</text>
+          <text class="percent">{{item.percent}}%</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-vote paper-card" wx:if="{{!candidates.length}}">
+    <view class="empty-plate">空</view>
+    <view class="section-title">还没有可以投票的菜</view>
+    <text class="subtle">先往菜谱簿里记几道菜，再回来选今晚吃什么。</text>
+    <button class="secondary-button" bindtap="openRecipes">去菜谱簿</button>
+  </view>
+
+  <view class="vote-tip" wx:if="{{candidates.length && !votedRecipeId}}">轻点一道菜，投出你的一票</view>
+  <view class="vote-tip voted" wx:if="{{candidates.length && votedRecipeId}}">你的选择已记下，不能重复投票</view>
+</view>

@@ -1,0 +1,71 @@
+<view class="page-shell profile-page safe-bottom">
+  <view class="family-banner">
+    <view class="banner-pattern"></view>
+    <text class="eyebrow family-eyebrow">欢迎回家</text>
+    <view class="family-name">{{familyName}}</view>
+    <text class="family-meta">{{familyMeta}}</text>
+    <view class="invite-chip" bindtap="copyInviteCode">
+      <text>体验邀请码 {{inviteCode}}</text>
+      <text class="copy-label">复制</text>
+    </view>
+  </view>
+
+  <view class="section-heading">
+    <view>
+      <text class="section-title">饭桌上的家人</text>
+      <text class="subtle">本地体验版展示家庭成员示例</text>
+    </view>
+    <view class="small-add" bindtap="addMember">＋ 邀请</view>
+  </view>
+
+  <view class="member-list paper-card">
+    <view wx:for="{{members}}" wx:key="name" class="member-row">
+      <view class="member-avatar {{item.tone}}">{{item.initial}}</view>
+      <view class="member-copy">
+        <text class="member-name">{{item.name}}{{item.name === userName ? '（我）' : ''}}</text>
+        <text class="member-role">{{item.role}}</text>
+      </view>
+      <view class="member-status">常在</view>
+    </view>
+  </view>
+
+  <view class="section-heading preference-heading">
+    <view>
+      <text class="section-title">我的口味档案</text>
+      <text class="subtle">排餐时给家人一个提醒</text>
+    </view>
+  </view>
+
+  <view class="preference-card paper-card">
+    <view class="preference-row">
+      <view>
+        <text class="preference-label">吃辣程度</text>
+        <text class="preference-value">{{spicyLabel}}</text>
+      </view>
+      <text class="chili-scale">椒</text>
+    </view>
+    <slider min="0" max="3" step="1" value="{{spicyLevel}}" activeColor="#d94f3d" backgroundColor="#e5ebe6" block-color="#18332f" bindchange="onSpicyChange" />
+
+    <view class="avoid-field">
+      <text class="preference-label">不爱吃 / 忌口</text>
+      <view class="avoid-input-row">
+        <input value="{{avoidFood}}" bindinput="onAvoidInput" confirm-type="done" bindconfirm="saveAvoidFood" placeholder="例如：香菜、花生" />
+        <text bindtap="saveAvoidFood">保存</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="settings-list paper-card">
+    <view class="settings-row">
+      <text>每周从周一开始</text><text class="settings-value">已开启</text>
+    </view>
+    <view class="settings-row">
+      <text>隐私政策与用户协议</text><text class="settings-arrow">›</text>
+    </view>
+    <view class="settings-row danger" bindtap="resetDemo">
+      <text>重置体验数据</text><text class="settings-arrow">›</text>
+    </view>
+  </view>
+
+  <text class="version-text">家常 Family Table · MVP 1.0</text>
+</view>

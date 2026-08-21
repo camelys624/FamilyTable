@@ -1,0 +1,118 @@
+<view class="page-shell home-page">
+  <view class="hero">
+    <view class="hero-copy">
+      <view class="family-line">
+        <text class="family-leaf">◆</text>
+        <text>{{familyName}}</text>
+      </view>
+      <view class="welcome-title">{{userName}}，开饭啦 <text class="wave">👋</text></view>
+      <text class="today-text">{{todayText}}</text>
+    </view>
+
+    <view class="produce-art" aria-hidden="true">
+      <text class="floating-leaf leaf-one">●</text>
+      <text class="floating-leaf leaf-two">●</text>
+      <view class="vegetables">
+        <text class="vegetable greens">🥬</text>
+        <text class="vegetable corn">🌽</text>
+        <text class="vegetable carrot">🥕</text>
+        <text class="vegetable hero-tomato">🍅</text>
+      </view>
+      <view class="basket-rim"></view>
+      <view class="basket-body"></view>
+    </view>
+  </view>
+
+  <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
+    <text class="cloud-error-title">云端数据暂时不可用</text>
+    <text class="cloud-error-message">{{loadError}}</text>
+    <text class="cloud-error-help">请先在微信开发者工具部署 recipe、menu 云函数并初始化数据库。</text>
+    <button class="secondary-button cloud-error-retry" bindtap="retryLoad">重新加载</button>
+  </view>
+
+  <block wx:else>
+  <view class="recommend-card paper-card">
+    <view class="card-heading">
+      <text class="card-title">今日菜单推荐</text>
+      <text class="sparkles">✦</text>
+    </view>
+
+    <view class="orbit-table" bindtap="openWeekMenu">
+      <view class="orbit-line"></view>
+      <view class="table-center">
+        <view class="cloche-icon">
+          <view class="cloche-knob"></view>
+          <view class="cloche-dome"></view>
+          <view class="cloche-base"></view>
+        </view>
+        <text class="center-small">今日</text>
+        <text class="center-title">菜单</text>
+        <text class="center-action">为你用心推荐</text>
+      </view>
+
+      <view
+        wx:for="{{todayDishes}}"
+        wx:key="id"
+        class="meal-plate plate-slot-{{index}} {{item.tone}}"
+      >
+        <text class="meal-mark">{{item.mealLabel}}</text>
+        <view class="food-preview">
+          <text class="food-emoji">{{item.foodEmoji}}</text>
+        </view>
+        <text class="plate-name">{{item.name}}</text>
+        <text class="plate-meta">{{item.mealLabel === '荐' ? '为你推荐' : item.duration + ' 分钟'}}</text>
+      </view>
+
+      <text class="empty-menu" wx:if="{{!todayDishes.length}}">去周菜单安排今天吃什么</text>
+    </view>
+  </view>
+
+  <view class="vote-card paper-card">
+    <view class="vote-heading">
+      <view>
+        <view class="title-line">
+          <text class="card-title">今晚投一票</text>
+          <text class="vote-leaf">♣</text>
+        </view>
+        <text class="vote-note">三个人的胃口，交给一张票</text>
+      </view>
+      <view class="card-link" bindtap="openVote">
+        <text>查看票数</text>
+        <text class="link-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="candidate-row" wx:if="{{pollCandidates.length}}">
+      <view
+        wx:for="{{pollCandidates}}"
+        wx:key="id"
+        class="candidate-chip {{item.tone}} {{votedRecipeId === item.id ? 'picked' : ''}}"
+        bindtap="openVote"
+      >
+        <text class="candidate-name">{{item.name}}</text>
+        <text class="candidate-vote" wx:if="{{votedRecipeId === item.id}}">已投</text>
+      </view>
+      <view class="more-chip" bindtap="openVote">
+        <text class="more-dots">•••</text>
+        <text>更多</text>
+      </view>
+    </view>
+    <view class="empty-vote" wx:else bindtap="openVote">先记几道菜，再请全家投票 <text>›</text></view>
+  </view>
+
+  <view class="shopping-card" bindtap="openShopping">
+    <view class="bag-icon">
+      <view class="bag-handle"></view>
+      <text>{{remainingShopping || '生'}}</text>
+    </view>
+    <view class="shopping-copy">
+      <text class="shopping-title">本周采购单</text>
+      <text class="shopping-note">{{shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text>
+    </view>
+    <view class="shopping-link">
+      <text>去看看</text>
+      <text class="link-arrow">›</text>
+    </view>
+  </view>
+  </block>
+</view>

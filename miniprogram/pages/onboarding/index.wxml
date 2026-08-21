@@ -1,0 +1,61 @@
+<view class="onboarding safe-bottom">
+  <view class="brand-row">
+    <view class="brand-mark">
+      <view class="bowl-line"></view>
+      <view class="bowl-dot"></view>
+    </view>
+    <text class="brand-name">家常</text>
+  </view>
+
+  <view class="intro-copy">
+    <text class="eyebrow">一家人 · 好好吃饭</text>
+    <view class="hero-title">把每天吃什么，<br />变成全家的小期待。</view>
+    <text class="hero-note">排一周菜单、一起投票，缺什么自动列成采购单。</text>
+  </view>
+
+  <view class="table-cloth">
+    <view class="dish dish-one">番茄<br />炒蛋</view>
+    <view class="dish dish-two">清蒸<br />鲈鱼</view>
+    <view class="dish dish-three">菜心</view>
+    <view class="cloth-note">今晚 18:30<br /><text>回家吃饭</text></view>
+  </view>
+
+  <view class="join-card paper-card">
+    <view class="mode-tabs">
+      <view class="mode-tab {{mode === 'create' ? 'active' : ''}}" data-mode="create" bindtap="setMode">创建家庭</view>
+      <view class="mode-tab {{mode === 'join' ? 'active' : ''}}" data-mode="join" bindtap="setMode">加入家庭</view>
+    </view>
+
+    <view class="form-field avatar-field">
+      <button class="avatar-picker" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+        <image wx:if="{{avatarPath}}" class="avatar-preview" src="{{avatarPath}}" mode="aspectFill" />
+        <text wx:else class="avatar-placeholder">+</text>
+      </button>
+      <view class="avatar-copy">
+        <text class="field-label">头像（可跳过）</text>
+        <text class="field-hint">点击选用微信头像</text>
+      </view>
+    </view>
+
+    <view class="form-field">
+      <text class="field-label">怎么称呼你</text>
+      <input class="input-shell" type="nickname" value="{{userName}}" maxlength="12" bindinput="onUserName" placeholder="例如：妈妈、小满" />
+    </view>
+
+    <view class="form-field" wx:if="{{mode === 'create'}}">
+      <text class="field-label">家庭小饭桌</text>
+      <input class="input-shell" value="{{familyName}}" maxlength="20" bindinput="onFamilyName" placeholder="给你们的饭桌取个名字" />
+    </view>
+
+    <view class="form-field" wx:else>
+      <text class="field-label">家庭邀请码</text>
+      <input class="input-shell code-input" value="{{inviteCode}}" maxlength="8" bindinput="onInviteCode" placeholder="输入邀请码" />
+      <text class="demo-code">本地体验码：JCFAN725</text>
+    </view>
+
+    <button class="primary-button continue-button" bindtap="continue" loading="{{submitting}}" disabled="{{submitting}}">
+      {{submitting ? '正在准备饭桌…' : (mode === 'create' ? '开张我的小饭桌' : '加入他们的饭桌')}}
+    </button>
+    <text class="privacy-note">继续即表示同意用户协议与隐私政策</text>
+  </view>
+</view>

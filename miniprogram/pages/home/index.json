@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "今天吃什么",
+  "navigationBarBackgroundColor": "#f2f8f4",
+  "navigationBarTextStyle": "black",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f2f8f4"
+}

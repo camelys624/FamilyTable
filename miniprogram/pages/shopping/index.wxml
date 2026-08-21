@@ -1,0 +1,62 @@
+<view class="page-shell shopping-page safe-bottom">
+  <view class="shopping-header">
+    <view>
+      <text class="eyebrow">从菜单到菜篮子</text>
+      <view class="page-title">本周采购单</view>
+    </view>
+    <view class="progress-stamp">
+      <text class="progress-number">{{progress}}%</text>
+      <text>已买齐</text>
+    </view>
+  </view>
+
+  <view class="progress-line">
+    <view class="progress-fill" style="width: {{progress}}%;"></view>
+  </view>
+  <view class="summary-row">
+    <text>{{checkedCount}} / {{total}} 项完成</text>
+    <text class="regenerate" bindtap="regenerate">按菜单重新汇总</text>
+  </view>
+
+  <view class="stale-note" wx:if="{{stale}}" bindtap="regenerate">
+    <view class="stale-mark">!</view>
+    <text>周菜单有变化，点这里重新汇总采购单</text>
+    <text class="stale-arrow">›</text>
+  </view>
+
+  <view class="quick-add paper-card">
+    <input value="{{newItem}}" bindinput="onNewItem" confirm-type="done" bindconfirm="addItem" placeholder="临时想起还要买……" />
+    <view class="quick-add-button" bindtap="addItem">加入</view>
+  </view>
+
+  <view class="shopping-groups">
+    <view class="shopping-group" wx:for="{{groups}}" wx:key="name">
+      <view class="group-heading">
+        <text class="group-name">{{item.name}}</text>
+        <text class="group-count">{{item.items.length}} 项</text>
+      </view>
+      <view class="group-list paper-card">
+        <view
+          wx:for="{{item.items}}"
+          wx:for-item="food"
+          wx:key="id"
+          class="shopping-item {{food.checked ? 'checked' : ''}}"
+          data-id="{{food.id}}"
+          bindtap="toggleItem"
+        >
+          <view class="check-box">{{food.checked ? '✓' : ''}}</view>
+          <text class="food-name">{{food.name}}</text>
+          <text class="food-amount">{{food.amount}}{{food.unit}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-list" wx:if="{{!total}}">
+    <view class="empty-bag"></view>
+    <view class="section-title">菜篮子是空的</view>
+    <text class="subtle">先安排周菜单，再回来生成采购清单。</text>
+  </view>
+
+  <button class="secondary-button clear-button" bindtap="clearChecked" wx:if="{{checkedCount}}">清除已买好的 {{checkedCount}} 项</button>
+</view>

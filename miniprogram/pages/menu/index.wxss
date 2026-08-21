@@ -1,0 +1,329 @@
+.menu-page {
+  padding-top: 36rpx;
+}
+
+.menu-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.week-stamp {
+  margin-top: 12rpx;
+  padding: 14rpx 18rpx;
+  border: 2rpx solid var(--ink);
+  border-radius: 4rpx;
+  background: var(--yolk);
+  font-family: monospace;
+  font-size: 21rpx;
+  font-weight: 700;
+  transform: rotate(3deg);
+}
+
+.day-scroll {
+  width: calc(100% + 56rpx);
+  margin: 35rpx -28rpx 0;
+}
+
+.day-list {
+  display: flex;
+  gap: 12rpx;
+  width: max-content;
+  padding: 8rpx 28rpx 20rpx;
+}
+
+.day-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 84rpx;
+  padding: 18rpx 5rpx 20rpx;
+  border-radius: 26rpx;
+  color: var(--muted);
+}
+
+.day-tab.active {
+  background: var(--ink);
+  color: #ffffff;
+  box-shadow: 0 10rpx 24rpx rgba(24, 51, 47, 0.18);
+}
+
+.day-week {
+  font-size: 22rpx;
+  font-weight: 750;
+}
+
+.day-date {
+  margin-top: 8rpx;
+  font-family: monospace;
+  font-size: 19rpx;
+}
+
+.day-dot {
+  position: absolute;
+  bottom: 7rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: var(--yolk);
+}
+
+.selected-line {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15rpx;
+  padding-bottom: 18rpx;
+  border-bottom: 2rpx solid rgba(24, 51, 47, 0.12);
+  font-weight: 750;
+}
+
+.meal-book {
+  margin-top: 8rpx;
+}
+
+.meal-row {
+  display: grid;
+  grid-template-columns: 126rpx 1fr;
+  gap: 18rpx;
+  padding: 30rpx 0;
+  border-bottom: 2rpx dashed rgba(24, 51, 47, 0.16);
+}
+
+.meal-label {
+  padding-top: 8rpx;
+}
+
+.meal-name {
+  display: block;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.meal-hint {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--muted);
+  font-size: 19rpx;
+  line-height: 1.35;
+}
+
+.dish-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.dish-ticket {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 206rpx;
+  min-height: 112rpx;
+  box-sizing: border-box;
+  padding: 23rpx 22rpx 18rpx;
+  border-radius: 8rpx 24rpx 24rpx 24rpx;
+  color: #ffffff;
+  box-shadow: 0 8rpx 18rpx rgba(24, 51, 47, 0.1);
+}
+
+.ticket-pin {
+  position: absolute;
+  left: 8rpx;
+  top: 8rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.ticket-remove {
+  position: absolute;
+  right: 7rpx;
+  top: 5rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  font-family: sans-serif;
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.ticket-name {
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.ticket-meta {
+  margin-top: 10rpx;
+  font-size: 19rpx;
+  opacity: 0.8;
+}
+
+.empty-meal {
+  display: flex;
+  align-items: center;
+  height: 86rpx;
+  color: #9aa59e;
+  font-size: 23rpx;
+}
+
+.add-dish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 122rpx;
+  min-height: 108rpx;
+  border: 2rpx dashed #9eb0a4;
+  border-radius: 22rpx;
+  color: var(--leaf);
+  font-size: 21rpx;
+}
+
+.add-plus {
+  font-size: 35rpx;
+  line-height: 1;
+}
+
+.repeat-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-top: 30rpx;
+  padding: 24rpx;
+  border-radius: 22rpx;
+  background: rgba(244, 201, 93, 0.36);
+  color: rgba(24, 51, 47, 0.75);
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.note-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 35rpx;
+  height: 35rpx;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.picker-mask {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  background: rgba(10, 27, 24, 0.42);
+}
+
+.recipe-picker {
+  position: fixed;
+  z-index: 21;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16rpx 30rpx calc(30rpx + env(safe-area-inset-bottom));
+  border-radius: 38rpx 38rpx 0 0;
+  background: var(--paper);
+  transform: translateY(105%);
+  transition: transform 220ms ease-out;
+}
+
+.recipe-picker.visible {
+  transform: translateY(0);
+}
+
+.picker-handle {
+  width: 70rpx;
+  height: 7rpx;
+  margin: 0 auto 24rpx;
+  border-radius: 99rpx;
+  background: #c9d2cb;
+}
+
+.picker-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.picker-title {
+  margin-top: 5rpx;
+  font-size: 36rpx;
+  font-weight: 800;
+}
+
+.picker-close {
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+.picker-list {
+  height: 620rpx;
+  margin-top: 24rpx;
+}
+
+.picker-recipe {
+  display: flex;
+  align-items: center;
+  padding: 19rpx 0;
+  border-bottom: 2rpx solid #edf0ed;
+}
+
+.recipe-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 82rpx;
+  height: 82rpx;
+  border-radius: 50%;
+  color: #ffffff;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 31rpx;
+  font-weight: 800;
+}
+
+.picker-copy {
+  flex: 1;
+  margin-left: 22rpx;
+}
+
+.picker-name {
+  display: block;
+  font-weight: 750;
+}
+
+.picker-meta {
+  display: block;
+  margin-top: 7rpx;
+  color: var(--muted);
+  font-size: 21rpx;
+}
+
+.picker-add {
+  color: var(--leaf);
+  font-size: 38rpx;
+}
+
+.picker-empty {
+  padding: 100rpx 30rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.tomato { background: #d94f3d; }
+.berry { background: #8f4a56; }
+.green { background: #4f7a60; }
+.grain { background: #c39243; }
+.ocean { background: #477a83; }

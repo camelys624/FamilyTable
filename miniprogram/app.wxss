@@ -1,0 +1,152 @@
+page {
+  --ink: #18332f;
+  --muted: #718078;
+  --jade: #eaf2ea;
+  --leaf: #4f7a60;
+  --yolk: #f4c95d;
+  --chili: #d94f3d;
+  --paper: #fffdf7;
+  --line: #d7e1d8;
+  min-height: 100%;
+  background: #eaf2ea;
+  color: #18332f;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 28rpx;
+}
+
+button {
+  margin: 0;
+  border-radius: 24rpx;
+  font-size: 28rpx;
+  font-weight: 650;
+}
+
+button::after {
+  border: 0;
+}
+
+.page-shell {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 28rpx 28rpx 48rpx;
+}
+
+.eyebrow {
+  color: var(--leaf);
+  font-size: 22rpx;
+  font-weight: 700;
+  letter-spacing: 5rpx;
+}
+
+.page-title {
+  margin-top: 8rpx;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 58rpx;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -2rpx;
+}
+
+.section-title {
+  font-size: 34rpx;
+  font-weight: 750;
+  letter-spacing: -1rpx;
+}
+
+.subtle {
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.paper-card {
+  border: 2rpx solid rgba(24, 51, 47, 0.08);
+  border-radius: 34rpx;
+  background: var(--paper);
+  box-shadow: 0 12rpx 36rpx rgba(24, 51, 47, 0.07);
+}
+
+.cloud-error-card {
+  margin-top: 28rpx;
+  padding: 28rpx;
+  border-color: rgba(217, 79, 61, 0.18);
+  background: #fffaf7;
+}
+
+.cloud-error-title,
+.cloud-error-message,
+.cloud-error-help {
+  display: block;
+}
+
+.cloud-error-title {
+  color: var(--chili);
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.cloud-error-message {
+  margin-top: 12rpx;
+  color: var(--ink);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.cloud-error-help {
+  margin-top: 8rpx;
+  color: var(--muted);
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+
+.cloud-error-retry {
+  width: 230rpx;
+  height: 70rpx;
+  margin-top: 22rpx;
+  font-size: 23rpx;
+}
+
+.primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 92rpx;
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 82rpx;
+  border: 2rpx solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 54rpx;
+  box-sizing: border-box;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(79, 122, 96, 0.12);
+  color: var(--leaf);
+  font-size: 23rpx;
+  font-weight: 650;
+}
+
+.input-shell {
+  height: 90rpx;
+  box-sizing: border-box;
+  padding: 0 28rpx;
+  border: 2rpx solid var(--line);
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.safe-bottom {
+  padding-bottom: calc(28rpx + env(safe-area-inset-bottom));
+}

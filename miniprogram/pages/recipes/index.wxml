@@ -1,0 +1,59 @@
+<view class="page-shell recipe-page">
+  <view class="recipe-header">
+    <view>
+      <text class="eyebrow">全家共有 · {{recipes.length}} 道</text>
+      <view class="page-title">传家的菜谱簿</view>
+    </view>
+    <view class="add-recipe-button" bindtap="addRecipe">＋</view>
+  </view>
+
+  <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
+    <text class="cloud-error-title">云端菜谱暂时不可用</text>
+    <text class="cloud-error-message">{{loadError}}</text>
+    <text class="cloud-error-help">请先在微信开发者工具部署 recipe 云函数并初始化数据库。</text>
+    <button class="secondary-button cloud-error-retry" bindtap="retryLoad">重新加载</button>
+  </view>
+
+  <view class="search-box">
+    <view class="search-icon"></view>
+    <input value="{{keyword}}" bindinput="onSearch" placeholder="搜菜名，例如番茄" placeholder-class="search-placeholder" />
+  </view>
+
+  <scroll-view scroll-x class="category-scroll" show-scrollbar="{{false}}">
+    <view class="category-list">
+      <view
+        wx:for="{{categories}}"
+        wx:key="*this"
+        class="category-pill {{selectedCategory === item ? 'active' : ''}}"
+        data-category="{{item}}"
+        bindtap="selectCategory"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="recipe-grid" wx:if="{{visibleRecipes.length}}">
+    <view wx:for="{{visibleRecipes}}" wx:key="id" class="recipe-card paper-card" data-id="{{item.id}}" bindtap="showRecipe">
+      <view class="recipe-cover {{item.tone}} {{item.imagePath ? 'has-image' : ''}}">
+        <image wx:if="{{item.imagePath}}" class="recipe-cover-image" src="{{item.imagePath}}" mode="aspectFill" />
+        <text wx:else class="cover-character">{{item.initial}}</text>
+        <view class="cover-time">{{item.duration}}′</view>
+      </view>
+      <view class="recipe-body">
+        <view class="recipe-card-title">{{item.name}}</view>
+        <view class="recipe-card-meta">
+          <text>{{item.category}}</text>
+          <text>·</text>
+          <text>{{item.difficulty}}</text>
+        </view>
+        <text class="recipe-note">{{item.note}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-search" wx:else>
+    <view class="empty-bowl"></view>
+    <view class="section-title">菜谱簿里还没有这道菜</view>
+    <text class="subtle">换个关键词，或者亲手记下第一份做法。</text>
+    <button class="secondary-button empty-button" bindtap="addRecipe">记一道新菜</button>
+  </view>
+</view>

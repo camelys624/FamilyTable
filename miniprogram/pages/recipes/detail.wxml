@@ -1,0 +1,52 @@
+<view class="detail-page safe-bottom" wx:if="{{recipe}}">
+  <view class="recipe-hero {{recipe.tone}} {{recipe.imagePath ? 'has-image' : ''}}">
+    <image wx:if="{{recipe.imagePath}}" class="hero-image" src="{{recipe.imagePath}}" mode="aspectFill" />
+    <block wx:else>
+      <view class="hero-rings"></view>
+      <text class="hero-initial">{{recipe.initial}}</text>
+    </block>
+    <view class="hero-stamp">{{recipe.duration}} 分钟</view>
+  </view>
+
+  <view class="detail-sheet">
+    <text class="eyebrow">{{recipe.category}} · {{recipe.difficulty}}</text>
+    <view class="detail-title">{{recipe.name}}</view>
+    <text class="recipe-note">{{recipe.note}}</text>
+
+    <view class="section-heading">
+      <text class="section-title">备好这些食材</text>
+      <text class="ingredient-count">{{recipe.ingredients.length}} 样</text>
+    </view>
+
+    <view class="ingredient-list paper-card">
+      <view class="ingredient-row" wx:for="{{recipe.ingredients}}" wx:key="name">
+        <text class="ingredient-index">{{index + 1}}</text>
+        <text class="ingredient-name">{{item.name}}</text>
+        <text class="ingredient-amount">{{item.amount}}{{item.unit}}</text>
+      </view>
+    </view>
+
+    <block wx:if="{{recipe.steps.length}}">
+      <view class="section-heading step-heading">
+        <text class="section-title">照着步骤来</text>
+        <text class="ingredient-count">{{recipe.steps.length}} 步</text>
+      </view>
+      <view class="instruction-list paper-card">
+        <view class="instruction-row" wx:for="{{recipe.steps}}" wx:key="*this">
+          <text class="instruction-index">{{index + 1}}</text>
+          <text class="instruction-text">{{item}}</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="menu-note" wx:if="{{usageCount}}">
+      <view class="note-pin"></view>
+      <text>这道菜本周已安排 {{usageCount}} 次，采购单会自动汇总对应食材。</text>
+    </view>
+
+    <view class="detail-actions">
+      <button class="secondary-button delete-button" bindtap="deleteRecipe">删除</button>
+      <button class="primary-button edit-button" bindtap="editRecipe">编辑菜谱</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "collections": [
+    {
+      "name": "users",
+      "indexes": [
+        { "name": "uniq_users_openid", "unique": true, "fields": [{ "field": "openid", "order": "asc" }] },
+        { "name": "idx_users_status_updated", "unique": false, "fields": [{ "field": "status", "order": "asc" }, { "field": "updatedAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "families",
+      "indexes": [
+        { "name": "idx_families_status_updated", "unique": false, "fields": [{ "field": "status", "order": "asc" }, { "field": "updatedAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "family_members",
+      "indexes": [
+        { "name": "uniq_members_family_user", "unique": true, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "userId", "order": "asc" }] },
+        { "name": "idx_members_user_status", "unique": false, "fields": [{ "field": "userId", "order": "asc" }, { "field": "status", "order": "asc" }] },
+        { "name": "idx_members_family_status", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "status", "order": "asc" }, { "field": "joinedAt", "order": "asc" }] }
+      ]
+    },
+    {
+      "name": "recipes",
+      "indexes": [
+        { "name": "idx_recipes_family_active_updated", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "deletedAt", "order": "asc" }, { "field": "updatedAt", "order": "desc" }, { "field": "_id", "order": "desc" }] },
+        { "name": "idx_recipes_family_category_active", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "category", "order": "asc" }, { "field": "deletedAt", "order": "asc" }, { "field": "updatedAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "menus",
+      "indexes": [
+        { "name": "uniq_menus_family_week", "unique": true, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "weekStart", "order": "asc" }] },
+        { "name": "idx_menus_family_updated", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "updatedAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "polls",
+      "indexes": [
+        { "name": "idx_polls_family_status_close", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "status", "order": "asc" }, { "field": "closesAt", "order": "asc" }] },
+        { "name": "idx_polls_family_target", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "targetDate", "order": "asc" }, { "field": "mealType", "order": "asc" }, { "field": "createdAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "votes",
+      "indexes": [
+        { "name": "uniq_votes_poll_member", "unique": true, "fields": [{ "field": "pollId", "order": "asc" }, { "field": "voterMemberId", "order": "asc" }] },
+        { "name": "idx_votes_family_poll_candidate", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "pollId", "order": "asc" }, { "field": "candidateRecipeId", "order": "asc" }] }
+      ]
+    },
+    {
+      "name": "shopping_lists",
+      "indexes": [
+        { "name": "uniq_shopping_family_week", "unique": true, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "weekStart", "order": "asc" }] },
+        { "name": "idx_shopping_family_status_updated", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "status", "order": "asc" }, { "field": "updatedAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "preferences",
+      "indexes": [
+        { "name": "uniq_preferences_family_user", "unique": true, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "userId", "order": "asc" }] },
+        { "name": "idx_preferences_member", "unique": false, "fields": [{ "field": "memberId", "order": "asc" }] }
+      ]
+    },
+    {
+      "name": "idempotency_records",
+      "indexes": [
+        { "name": "uniq_idempotency_user_action_request", "unique": true, "fields": [{ "field": "userId", "order": "asc" }, { "field": "action", "order": "asc" }, { "field": "requestId", "order": "asc" }] },
+        { "name": "idx_idempotency_expires", "unique": false, "fields": [{ "field": "expiresAt", "order": "asc" }] }
+      ]
+    },
+    {
+      "name": "operation_logs",
+      "indexes": [
+        { "name": "idx_logs_family_created", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "createdAt", "order": "desc" }] },
+        { "name": "idx_logs_action_created", "unique": false, "fields": [{ "field": "action", "order": "asc" }, { "field": "createdAt", "order": "desc" }] },
+        { "name": "idx_logs_request", "unique": false, "fields": [{ "field": "requestId", "order": "asc" }] }
+      ]
+    }
+  ]
+}

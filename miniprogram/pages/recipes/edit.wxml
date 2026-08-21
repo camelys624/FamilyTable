@@ -1,0 +1,179 @@
+<view class="page-shell edit-page safe-bottom">
+  <view class="edit-header">
+    <text class="eyebrow">一笔一画 · 记下家常味</text>
+    <view class="page-title">{{heading}}</view>
+    <text class="subtle edit-intro">食材逐行添加，用量会直接汇总到采购单；操作步骤也可以按顺序补充。</text>
+  </view>
+
+  <view class="edit-card paper-card">
+    <view class="form-field">
+      <text class="field-label">菜名<text class="required-mark">*</text></text>
+      <input class="input-shell" value="{{name}}" bindinput="onName" maxlength="30" placeholder="例如：外婆的红烧肉" />
+    </view>
+
+    <view class="form-field image-field">
+      <view class="field-heading image-field-heading">
+        <view>
+          <text class="field-label field-label-inline">菜品图片</text>
+          <text class="field-caption">给这道家常味留一张照片</text>
+        </view>
+        <view class="image-remove-action" wx:if="{{imagePath}}" bindtap="clearRecipeImage">移除</view>
+      </view>
+      <view class="recipe-image-picker {{imagePath ? 'has-image' : ''}}" bindtap="chooseRecipeImage">
+        <image wx:if="{{imagePath}}" class="recipe-image-preview" src="{{imagePath}}" mode="aspectFill" />
+        <view wx:else class="image-placeholder">
+          <view class="image-placeholder-mark">＋</view>
+          <view>
+            <text class="image-placeholder-title">添加一道菜的照片</text>
+            <text class="image-placeholder-note">点击从相册选择，或拍一张</text>
+          </view>
+        </view>
+        <view wx:if="{{imagePath}}" class="image-change-tip">点击更换</view>
+      </view>
+    </view>
+
+    <view class="form-pair">
+      <view class="pair-item">
+        <text class="field-label">分类</text>
+        <picker range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategory">
+          <view class="picker-field">
+            <text>{{category}}</text>
+            <view class="picker-arrow-icon">▾</view>
+          </view>
+        </picker>
+      </view>
+      <view class="pair-item">
+        <text class="field-label">用时（分钟）</text>
+        <input class="input-shell" type="number" value="{{duration}}" bindinput="onDuration" placeholder="20" />
+      </view>
+    </view>
+
+    <view class="form-field">
+      <text class="field-label">难度</text>
+      <view class="difficulty-options">
+        <view
+          wx:for="{{difficulties}}"
+          wx:key="*this"
+          class="difficulty-option {{difficulty === item ? 'active' : ''}}"
+          data-value="{{item}}"
+          bindtap="setDifficulty"
+        >{{item}}</view>
+      </view>
+    </view>
+
+    <view class="form-field">
+      <view class="field-heading">
+        <view>
+          <text class="field-label field-label-inline">食材<text class="required-mark">*</text></text>
+          <text class="field-caption">输入关键词筛选，或直接自建</text>
+        </view>
+        <view class="add-row-action" bindtap="addIngredient">
+          <text>＋</text>
+          <text>添加食材</text>
+        </view>
+      </view>
+
+      <view class="ingredient-list">
+        <view
+          class="ingredient-row {{activeIngredientIndex === ingredientIndex ? 'combobox-open' : ''}}"
+          wx:for="{{ingredients}}"
+          wx:key="id"
+          wx:for-index="ingredientIndex"
+        >
+          <view class="row-number">{{ingredientIndex + 1}}</view>
+          <view class="ingredient-name-shell">
+            <view
+              class="ingredient-combobox {{activeIngredientIndex === ingredientIndex ? 'active' : ''}}"
+              data-index="{{ingredientIndex}}"
+              bindtap="toggleIngredientCombobox"
+            >
+              <input
+                class="ingredient-search-input"
+                value="{{item.name}}"
+                data-index="{{ingredientIndex}}"
+                bindinput="onIngredientQuery"
+                maxlength="20"
+                placeholder="搜索或输入新食材"
+              />
+              <text class="combobox-arrow">▾</text>
+            </view>
+
+            <view class="combobox-panel" wx:if="{{activeIngredientIndex === ingredientIndex}}">
+              <view class="combobox-tip">选择或创建食材</view>
+              <view
+                class="combobox-option"
+                wx:for="{{filteredIngredientOptions}}"
+                wx:for-item="option"
+                wx:key="*this"
+                data-index="{{ingredientIndex}}"
+                data-name="{{option}}"
+                bindtap="selectIngredient"
+              >
+                <text class="option-name">{{option}}</text>
+                <text class="option-action">选择</text>
+              </view>
+              <view class="create-option" wx:if="{{canCreateIngredient}}" bindtap="createIngredient">
+                <view class="create-plus">＋</view>
+                <view class="create-info">
+                  <text class="create-title">创建“{{ingredientQuery}}”</text>
+                  <text class="create-note">保存后自动加入常用食材库</text>
+                </view>
+              </view>
+              <view class="combobox-empty" wx:if="{{!filteredIngredientOptions.length && !canCreateIngredient}}">无匹配食材，输入名称即可创建</view>
+              <view class="combobox-close" bindtap="closeIngredientCombobox">收起面板</view>
+            </view>
+          </view>
+          <view class="amount-shell">
+            <input
+              class="amount-input"
+              type="digit"
+              value="{{item.amount}}"
+              data-index="{{ingredientIndex}}"
+              bindinput="onIngredientAmount"
+              placeholder="用量"
+            />
+            <text class="amount-unit">{{item.unit || '克'}}</text>
+          </view>
+          <view class="row-remove" data-index="{{ingredientIndex}}" bindtap="removeIngredient">×</view>
+        </view>
+      </view>
+      <text class="field-help">每行一种食材；用量默认按克计算</text>
+    </view>
+
+    <view class="form-field step-field">
+      <view class="field-heading">
+        <view>
+          <text class="field-label field-label-inline">操作步骤<text class="required-mark">*</text></text>
+          <text class="field-caption">按实际下厨顺序填写</text>
+        </view>
+        <view class="add-row-action" bindtap="addStep">
+          <text>＋</text>
+          <text>添加步骤</text>
+        </view>
+      </view>
+
+      <view class="step-list">
+        <view class="step-row" wx:for="{{steps}}" wx:key="id">
+          <view class="step-number">{{index + 1}}</view>
+          <textarea
+            class="step-input"
+            value="{{item.text}}"
+            data-index="{{index}}"
+            bindinput="onStepInput"
+            maxlength="200"
+            auto-height
+            placeholder="例如：热锅倒油，先把鸡蛋炒至刚凝固后盛出"
+          />
+          <view class="row-remove step-remove" data-index="{{index}}" bindtap="removeStep">×</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-field">
+      <text class="field-label">家里的小诀窍</text>
+      <textarea class="text-area note-area" value="{{note}}" bindinput="onNote" maxlength="120" placeholder="例如：最后开大火收汁，别急着翻动" />
+    </view>
+  </view>
+
+  <button class="primary-button save-button" bindtap="saveRecipe">{{submitText}}</button>
+</view>

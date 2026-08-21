@@ -1,0 +1,199 @@
+.vote-page {
+  padding-top: 38rpx;
+}
+
+.vote-heading .subtle {
+  display: block;
+  max-width: 600rpx;
+  margin-top: 15rpx;
+}
+
+.voter-row {
+  display: flex;
+  align-items: center;
+  margin-top: 35rpx;
+  color: var(--muted);
+  font-size: 22rpx;
+}
+
+.voter-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50rpx;
+  height: 50rpx;
+  margin-right: -10rpx;
+  border: 4rpx solid var(--jade);
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.voter-one { background: var(--chili); }
+.voter-two { background: #477a83; }
+.voter-three { margin-right: 18rpx; background: var(--leaf); }
+
+.candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+  margin-top: 32rpx;
+}
+
+.vote-card {
+  display: flex;
+  padding: 20rpx;
+  transition: transform 160ms ease;
+}
+
+.vote-card.selected {
+  border: 4rpx solid var(--yolk);
+  transform: rotate(-0.6deg);
+}
+
+.candidate-dish {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 150rpx;
+  height: 150rpx;
+  border: 10rpx solid rgba(255, 255, 255, 0.86);
+  border-radius: 50%;
+  color: #ffffff;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 54rpx;
+  font-weight: 900;
+  box-shadow: 0 9rpx 20rpx rgba(24, 51, 47, 0.12);
+}
+
+.selected-seal {
+  position: absolute;
+  right: -17rpx;
+  bottom: -6rpx;
+  padding: 8rpx 11rpx;
+  border-radius: 8rpx;
+  background: var(--yolk);
+  color: var(--ink);
+  font-family: sans-serif;
+  font-size: 18rpx;
+  font-weight: 800;
+  transform: rotate(-7deg);
+}
+
+.candidate-main {
+  flex: 1;
+  min-width: 0;
+  padding: 8rpx 6rpx 4rpx 22rpx;
+}
+
+.candidate-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.candidate-name {
+  display: block;
+  font-size: 31rpx;
+  font-weight: 800;
+}
+
+.candidate-meta {
+  display: block;
+  margin-top: 7rpx;
+  color: var(--muted);
+  font-size: 20rpx;
+}
+
+.vote-number {
+  flex: 0 0 auto;
+  color: var(--leaf);
+  font-family: monospace;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.vote-track {
+  height: 11rpx;
+  margin-top: 22rpx;
+  overflow: hidden;
+  border-radius: 99rpx;
+  background: #e5ebe6;
+}
+
+.vote-fill {
+  height: 100%;
+  border-radius: 99rpx;
+  background: var(--leaf);
+}
+
+.vote-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 10rpx;
+  margin-top: 13rpx;
+  color: var(--muted);
+  font-size: 19rpx;
+  line-height: 1.35;
+}
+
+.percent {
+  flex: 0 0 auto;
+  font-family: monospace;
+}
+
+.vote-tip {
+  margin-top: 28rpx;
+  padding: 22rpx;
+  border-radius: 20rpx;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 23rpx;
+  text-align: center;
+}
+
+.vote-tip.voted {
+  background: rgba(79, 122, 96, 0.14);
+  color: var(--leaf);
+}
+
+.empty-vote {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 34rpx;
+  padding: 70rpx 34rpx;
+  text-align: center;
+}
+
+.empty-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 130rpx;
+  height: 130rpx;
+  margin-bottom: 30rpx;
+  border: 8rpx double var(--leaf);
+  border-radius: 50%;
+  color: var(--leaf);
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.empty-vote .subtle {
+  margin: 14rpx 0 28rpx;
+}
+
+.empty-vote button {
+  width: 240rpx;
+}
+
+.tomato { background: #d94f3d; }
+.berry { background: #8f4a56; }
+.green { background: #4f7a60; }
+.grain { background: #c39243; }
+.ocean { background: #477a83; }

@@ -1,0 +1,251 @@
+.onboarding {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 46rpx 30rpx 52rpx;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(24, 51, 47, 0.045) 2rpx, transparent 2rpx),
+    linear-gradient(90deg, rgba(24, 51, 47, 0.045) 2rpx, transparent 2rpx),
+    var(--jade);
+  background-size: 40rpx 40rpx;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.brand-mark {
+  position: relative;
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 18rpx;
+  background: var(--ink);
+}
+
+.bowl-line {
+  position: absolute;
+  left: 13rpx;
+  top: 25rpx;
+  width: 32rpx;
+  height: 13rpx;
+  border-bottom: 5rpx solid var(--yolk);
+  border-radius: 0 0 30rpx 30rpx;
+}
+
+.bowl-dot {
+  position: absolute;
+  top: 11rpx;
+  left: 26rpx;
+  width: 7rpx;
+  height: 7rpx;
+  border-radius: 50%;
+  background: var(--yolk);
+}
+
+.brand-name {
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.intro-copy {
+  margin-top: 60rpx;
+}
+
+.hero-title {
+  margin-top: 18rpx;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 64rpx;
+  font-weight: 800;
+  line-height: 1.24;
+  letter-spacing: -3rpx;
+}
+
+.hero-note {
+  display: block;
+  width: 550rpx;
+  margin-top: 20rpx;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.table-cloth {
+  position: relative;
+  height: 270rpx;
+  margin: 34rpx 18rpx -26rpx;
+}
+
+.dish {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 12rpx solid rgba(255, 255, 255, 0.86);
+  border-radius: 50%;
+  color: #ffffff;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 25rpx;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  box-shadow: 0 16rpx 32rpx rgba(24, 51, 47, 0.15);
+}
+
+.dish-one {
+  left: 4rpx;
+  top: 34rpx;
+  width: 172rpx;
+  height: 172rpx;
+  background: var(--chili);
+  transform: rotate(-8deg);
+}
+
+.dish-two {
+  left: 150rpx;
+  top: 0;
+  width: 206rpx;
+  height: 206rpx;
+  background: #477a83;
+  transform: rotate(4deg);
+}
+
+.dish-three {
+  left: 330rpx;
+  top: 74rpx;
+  width: 142rpx;
+  height: 142rpx;
+  background: var(--leaf);
+}
+
+.cloth-note {
+  position: absolute;
+  right: 0;
+  top: 32rpx;
+  padding: 19rpx 23rpx;
+  background: var(--yolk);
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 27rpx;
+  font-weight: 800;
+  line-height: 1.2;
+  transform: rotate(5deg);
+  box-shadow: 0 8rpx 18rpx rgba(24, 51, 47, 0.12);
+}
+
+.cloth-note text {
+  font-size: 21rpx;
+  font-family: -apple-system, sans-serif;
+}
+
+.join-card {
+  position: relative;
+  padding: 30rpx;
+}
+
+.mode-tabs {
+  display: flex;
+  padding: 7rpx;
+  border-radius: 20rpx;
+  background: var(--jade);
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 19rpx 0;
+  border-radius: 16rpx;
+  color: var(--muted);
+  font-size: 26rpx;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mode-tab.active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 5rpx 14rpx rgba(24, 51, 47, 0.08);
+}
+
+.form-field {
+  margin-top: 28rpx;
+}
+
+.avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+}
+
+.avatar-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 108rpx;
+  height: 108rpx;
+  margin: 0;
+  padding: 0;
+  border: 3rpx dashed rgba(24, 51, 47, 0.35);
+  border-radius: 50%;
+  background: var(--paper);
+  overflow: hidden;
+  line-height: 1;
+}
+
+.avatar-picker::after {
+  border: none;
+}
+
+.avatar-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-placeholder {
+  color: var(--muted);
+  font-size: 46rpx;
+  font-weight: 300;
+}
+
+.avatar-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-hint {
+  margin-top: 6rpx;
+  color: #9aa49e;
+  font-size: 21rpx;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 12rpx;
+  color: var(--muted);
+  font-size: 23rpx;
+  font-weight: 650;
+}
+
+.code-input {
+  letter-spacing: 8rpx;
+}
+
+.demo-code {
+  display: block;
+  margin-top: 10rpx;
+  color: var(--leaf);
+  font-family: monospace;
+  font-size: 20rpx;
+}
+
+.continue-button {
+  margin-top: 30rpx;
+}
+
+.privacy-note {
+  display: block;
+  margin-top: 18rpx;
+  color: #9aa49e;
+  font-size: 20rpx;
+  text-align: center;
+}
