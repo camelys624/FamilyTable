@@ -78,6 +78,25 @@
         { "name": "idx_logs_action_created", "unique": false, "fields": [{ "field": "action", "order": "asc" }, { "field": "createdAt", "order": "desc" }] },
         { "name": "idx_logs_request", "unique": false, "fields": [{ "field": "requestId", "order": "asc" }] }
       ]
+    },
+    {
+      "name": "fridge_batches",
+      "indexes": [
+        { "name": "idx_fridge_batches_family_remaining", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "remaining", "order": "asc" }, { "field": "expiresOn", "order": "asc" }] }
+      ]
+    },
+    {
+      "name": "fridge_records",
+      "indexes": [
+        { "name": "idx_fridge_records_family_created", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "createdAt", "order": "desc" }, { "field": "_id", "order": "desc" }] },
+        { "name": "idx_fridge_records_batch", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "batchId", "order": "asc" }, { "field": "createdAt", "order": "desc" }] }
+      ]
+    },
+    {
+      "name": "fridge_cooks",
+      "indexes": [
+        { "name": "idx_fridge_cooks_family_created", "unique": false, "fields": [{ "field": "familyId", "order": "asc" }, { "field": "createdAt", "order": "desc" }] }
+      ]
     }
   ]
 }
