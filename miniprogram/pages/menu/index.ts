@@ -127,6 +127,21 @@ Page({
     }
   },
 
+  openCook(event: { currentTarget: { dataset: { id?: string; meal?: string } } }) {
+    const itemId = event.currentTarget.dataset.id
+    const mealType = event.currentTarget.dataset.meal as MealType
+    const day = this.data.days[this.data.selectedIndex]
+    if (!day || !itemId || !this.data.menuId || !MEAL_TYPES.includes(mealType)) return
+    const params = [
+      ['weekStart', this.data.weekStart],
+      ['menuId', this.data.menuId],
+      ['date', day.key],
+      ['mealType', mealType],
+      ['itemId', itemId],
+    ].map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')
+    wx.navigateTo({ url: `/pages/fridge/cook?${params}` })
+  },
+
   removeRecipe(event: any) {
     const itemId = event.currentTarget.dataset.id
     const recipe = this.data.meals

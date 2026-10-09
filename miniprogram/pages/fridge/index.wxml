@@ -1,0 +1,81 @@
+<view class="page-shell fridge-page safe-bottom">
+  <text class="eyebrow">家的食材 · 好好珍惜</text>
+  <view class="page-title">打开冰箱</view>
+  <text class="subtle">按购入批次记，有剩就留着，用完再补货。</text>
+  <view class="toolbar">
+    <button class="primary-button" bindtap="openAdd" disabled="{{saving}}">记一份食材</button>
+    <button class="secondary-button" bindtap="refresh" disabled="{{loading || saving}}">刷新冰箱</button>
+  </view>
+  <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
+    <text class="cloud-error-title">冰箱暂时打不开</text>
+    <text class="cloud-error-message">{{loadError}}</text>
+    <button class="secondary-button cloud-error-retry" bindtap="refresh">重新加载</button>
+  </view>
+  <view class="paper-card editor" wx:if="{{editorVisible}}">
+    <view class="section-title">{{editingId ? '修改这一批' : '放进冰箱'}}</view>
+    <label class="field-label" for="ingredient-name">食材名称</label>
+    <input id="ingredient-name" class="input-shell" value="{{formName}}" maxlength="40" placeholder="例如：番茄" bindinput="inputName" disabled="{{saving}}" />
+    <text class="field-label">保质期至（选填）</text>
+    <picker mode="date" value="{{formExpiry}}" bindchange="changeExpiry" disabled="{{saving}}">
+      <view class="input-shell date-field">{{formExpiry || '选择日期，未填写不代表一定安全'}}</view>
+    </picker>
+    <button class="text-button" bindtap="clearExpiry" disabled="{{saving}}">清除保质期</button>
+    <text class="error-text" wx:if="{{saveError}}">{{saveError}}</text>
+    <view class="toolbar">
+      <button class="primary-button" bindtap="saveBatch" loading="{{saving}}" disabled="{{saving}}">保存</button>
+      <button class="secondary-button" bindtap="closeEditor" disabled="{{saving}}">取消</button>
+    </view>
+  </view>
+  <view class="paper-card editor" wx:if="{{discardId}}">
+    <view class="section-title">记录“{{discardName}}”的报损</view>
+    <picker range="{{discardReasons}}" bindchange="changeDiscardReason" disabled="{{saving}}">
+      <view class="input-shell date-field">原因：{{discardReasons[discardReasonIndex]}}</view>
+    </picker>
+    <checkbox-group bindchange="changeDiscardUsedUp">
+      <label class="field-label"><checkbox value="usedUp" checked="{{discardUsedUp}}" disabled="{{saving}}" color="#4f7a60" />这一批已全部丢弃</label>
+    </checkbox-group>
+    <text class="subtle">未全部丢弃会保留有剩；过期或变质批次仍不能参与做菜和建议。</text>
+    <text class="error-text" wx:if="{{saveError}}">{{saveError}}</text>
+    <view class="toolbar">
+      <button class="primary-button" bindtap="confirmDiscard" loading="{{saving}}" disabled="{{saving}}">确认报损</button>
+      <button class="secondary-button" bindtap="closeDiscard" disabled="{{saving}}">取消</button>
+    </view>
+  </view>
+  <view class="section-heading"><text class="section-title">剩余食材</text><text class="subtle">{{availableCount}} 批可用</text></view>
+  <text class="subtle">已用完或全部丢弃的批次保留在记录中；重新购入请录入新批次。</text>
+  <text class="subtle" wx:if="{{loading}}">正在查看冰箱…</text>
+  <view class="paper-card empty-card" wx:elif="{{!batches.length && !loadError}}">冰箱还没记食材，先把家里剩下的放进来吧。</view>
+  <view class="paper-card batch-card" wx:for="{{batches}}" wx:key="id">
+    <view class="batch-heading"><text class="batch-name">{{item.name}}</text><text class="pill {{item.expired ? 'expired' : ''}}">{{item.statusLabel}}</text></view>
+    <text class="subtle">保质期至：{{item.expiryLabel}}</text>
+    <text class="error-text" wx:if="{{item.expired}}">已过期，不参与做菜和建议；确认丢弃才记报损。</text>
+    <text class="error-text" wx:if="{{!item.expired && !item.usable}}">这批当前不可用，不参与做菜和建议；请核对情况并记录报损。</text>
+    <view class="batch-actions">
+      <button class="text-button" data-id="{{item.id}}" bindtap="openEdit" disabled="{{saving}}">修改</button>
+      <button class="text-button" data-id="{{item.id}}" bindtap="discardBatch" disabled="{{saving}}">{{item.expired ? '确认丢弃 · 记过期' : '报损 / 丢弃'}}</button>
+    </view>
+  </view>
+  <view class="section-heading"><text class="section-title">冰箱里能做什么</text></view>
+  <text class="subtle">建议不会自动消耗食材或提交采购；做菜时再核对当前库存。</text>
+  <button class="secondary-button suggest-button" bindtap="suggest" loading="{{aiLoading}}" disabled="{{aiLoading || saving || loading}}">{{aiLoading ? '正在想菜单…' : '请 AI 想几道菜'}}</button>
+  <text class="error-text" wx:if="{{aiError}}">{{aiError}}。仍可录入、修改食材和确认做菜。</text>
+  <view class="paper-card empty-card" wx:if="{{aiLoaded && !suggestions.length && !aiError}}">这次没有合适的建议，可以补充食材后再试。</view>
+  <view class="paper-card suggestion-card" wx:for="{{suggestions}}" wx:key="name">
+    <view class="batch-heading"><text class="batch-name">{{item.name}}</text><text class="pill">{{item.canCook ? '可以做' : '需补购'}}</text></view>
+    <text class="subtle">{{item.reason}}</text>
+    <text class="suggestion-line">已有：{{item.availableLabel}}</text>
+    <text class="error-text" wx:if="{{!item.canCook}}">需补购：{{item.missingLabel}}</text>
+    <text class="subtle" wx:if="{{item.stepsLabel}}">{{item.stepsLabel}}</text>
+  </view>
+  <text class="subtle safety-note">过期或变质食材不要食用。保质期及 AI 建议不能代替食品安全判断。</text>
+  <view class="section-heading"><text class="section-title">食材变动记录</text><button class="text-button" bindtap="loadRecords" disabled="{{recordsLoading}}">刷新记录</button></view>
+  <text class="subtle" wx:if="{{recordsLoading}}">正在读取记录…</text>
+  <text class="error-text" wx:if="{{recordsError}}">{{recordsError}}</text>
+  <view class="paper-card empty-card" wx:if="{{recordsLoaded && !records.length && !recordsError}}">还没有食材变动。过期不会自动记成丢弃。</view>
+  <view class="paper-card record-card" wx:for="{{records}}" wx:key="id">
+    <view class="batch-heading"><text>{{item.name}}</text><text class="pill">{{item.typeLabel}}</text></view>
+    <text class="subtle">{{item.detail}}</text>
+    <text class="subtle">{{item.timeLabel}}</text>
+  </view>
+  <button class="secondary-button" wx:if="{{recordsHasMore}}" bindtap="moreRecords" loading="{{recordsLoading}}" disabled="{{recordsLoading}}">查看更多记录</button>
+</view>

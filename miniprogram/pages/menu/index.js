@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const menu_1 = require("../../modules/menu/index");
-const recipe_1 = require("../../modules/recipe/index");
+const index_1 = require("../../modules/menu/index");
+const index_2 = require("../../modules/recipe/index");
 const date_1 = require("../../utils/date");
 const app_error_1 = require("../../utils/app-error");
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
@@ -34,8 +34,8 @@ Page({
         const weekStart = this.data.weekStart || (0, date_1.getCurrentWeekKey)();
         try {
             const [menu, recipes] = await Promise.all([
-                menu_1.menuModule.getWeekMenu(weekStart),
-                recipe_1.recipeModule.listRecipes(),
+                index_1.menuModule.getWeekMenu(weekStart),
+                index_2.recipeModule.listRecipes(),
             ]);
             const day = menu.days[currentIndex] || menu.days[0];
             if (!day)
@@ -99,7 +99,7 @@ Page({
         if (!day)
             return;
         try {
-            await menu_1.menuModule.addRecipe({
+            await index_1.menuModule.addRecipe({
                 weekStart: this.data.weekStart || (0, date_1.getCurrentWeekKey)(),
                 date: day.key,
                 mealType: this.data.pickerMeal,
@@ -115,6 +115,21 @@ Page({
             wx.showToast({ title: error instanceof Error ? error.message : '添加菜单失败，请重试', icon: 'none' });
         }
     },
+    openCook(event) {
+        const itemId = event.currentTarget.dataset.id;
+        const mealType = event.currentTarget.dataset.meal;
+        const day = this.data.days[this.data.selectedIndex];
+        if (!day || !itemId || !this.data.menuId || !MEAL_TYPES.includes(mealType))
+            return;
+        const params = [
+            ['weekStart', this.data.weekStart],
+            ['menuId', this.data.menuId],
+            ['date', day.key],
+            ['mealType', mealType],
+            ['itemId', itemId],
+        ].map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
+        wx.navigateTo({ url: `/pages/fridge/cook?${params}` });
+    },
     removeRecipe(event) {
         const itemId = event.currentTarget.dataset.id;
         const recipe = this.data.meals
@@ -128,7 +143,7 @@ Page({
                 if (!result.confirm)
                     return;
                 try {
-                    await menu_1.menuModule.removeRecipe({
+                    await index_1.menuModule.removeRecipe({
                         menuId: this.data.menuId,
                         itemId,
                         expectedVersion: this.data.menuVersion,

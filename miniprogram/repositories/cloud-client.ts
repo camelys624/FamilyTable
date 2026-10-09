@@ -19,8 +19,12 @@ export interface CloudTransport {
 export class CloudClient {
   constructor(private readonly transport: CloudTransport) {}
 
-  async call<T>(functionName: string, action: string, payload: Record<string, unknown> = {}): Promise<T> {
-    const requestId = createRequestId()
+  async call<T>(
+    functionName: string,
+    action: string,
+    payload: Record<string, unknown> = {},
+    requestId = createRequestId(),
+  ): Promise<T> {
     try {
       const response = await this.transport.callFunction({
         name: functionName,

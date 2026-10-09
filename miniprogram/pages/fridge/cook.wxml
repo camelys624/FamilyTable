@@ -1,0 +1,40 @@
+<view class="page-shell cook-page safe-bottom">
+  <text class="eyebrow">做完再记 · 不用算克数</text>
+  <view class="page-title">{{recipeName || '这次做菜'}}</view>
+  <text class="subtle" wx:if="{{!submitted}}">选这次实际使用的批次，再勾选是否用完。未勾选就保留有剩，取消不会改变冰箱。</text>
+  <text class="subtle" wx:if="{{loading}}">正在核对菜单和冰箱…</text>
+  <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
+    <text class="cloud-error-message">{{loadError}}</text>
+    <button class="secondary-button cloud-error-retry" bindtap="loadData" disabled="{{loading || submitting}}">重新核对</button>
+  </view>
+  <text class="confirmation-notice" wx:if="{{reconfirmRequired}}">冰箱批次有变化，请重新核对选择和“是否用完”，再点击确认。不会自动重试记录。</text>
+  <text class="confirmation-notice" wx:if="{{outcomeUncertain}}">正在等待原确认的记录结果，保留原批次和选择。重试只查询这次记录，不重复记账。</text>
+  <view class="paper-card ingredient-card" wx:for="{{ingredients}}" wx:key="name" wx:if="{{!submitted}}">
+    <view class="section-title">{{item.name}}</view>
+    <text class="subtle" wx:if="{{!item.batches.length}}">没有可用批次。先去冰箱补记实际使用的食材，再回来确认。</text>
+    <view class="batch-choice" wx:for="{{item.batches}}" wx:for-item="batch" wx:key="id">
+      <checkbox-group data-id="{{batch.id}}" bindchange="selectBatch">
+        <label class="choice-label">
+          <checkbox value="selected" checked="{{batch.selected}}" disabled="{{loading || loadError || submitting || submitted || outcomeUncertain}}" color="#4f7a60" />
+          <view><text>{{batch.name}}</text><text class="subtle">保质期至 {{batch.expiryLabel}} · {{batch.statusLabel}}</text></view>
+        </label>
+      </checkbox-group>
+      <checkbox-group data-id="{{batch.id}}" bindchange="toggleUsedUp" wx:if="{{batch.selected}}">
+        <label class="choice-label used-up-choice"><checkbox value="usedUp" checked="{{batch.usedUp}}" disabled="{{loading || loadError || submitting || submitted || outcomeUncertain}}" color="#4f7a60" /><text>这批用完了 · 下次要买</text></label>
+      </checkbox-group>
+    </view>
+  </view>
+  <text class="subtle" wx:if="{{!submitted && !loading && !loadError && !ingredients.length}}">这道菜的菜单快照没有食材记录，无法确认做菜消耗。</text>
+  <text class="error-text" wx:if="{{submitError}}">{{submitError}}</text>
+  <view class="paper-card result-card" wx:if="{{submitted}}">
+    <text class="section-title">做菜消耗已记录</text>
+    <text class="subtle" wx:for="{{results}}" wx:key="id">{{item.name}}：{{item.remaining ? '仍有剩余' : '这批已用完'}} · {{item.statusLabel}}</text>
+    <text class="subtle">未用完的批次仍有剩余，采购单继续沿用菜谱的“是否用完”规则。</text>
+    <button class="secondary-button" bindtap="openFridge">查看冰箱和记录</button>
+  </view>
+  <view class="toolbar" wx:else>
+    <button class="primary-button" bindtap="submit" loading="{{submitting}}" disabled="{{submitting || loading || !canSubmit}}">{{outcomeUncertain ? '重试 · 确认原记录结果' : '做完了 · 确认记录'}}</button>
+    <button class="secondary-button" bindtap="cancel" disabled="{{submitting}}">取消</button>
+  </view>
+  <button class="text-button" bindtap="openFridge" wx:if="{{!submitted}}" disabled="{{submitting}}">先去冰箱录入食材</button>
+</view>

@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const menu_1 = require("../../modules/menu/index");
-const recipe_1 = require("../../modules/recipe/index");
+const index_1 = require("../../modules/menu/index");
+const index_2 = require("../../modules/recipe/index");
 const date_1 = require("../../utils/date");
 const store_1 = require("../../services/store");
-const index_1 = require("../../modules/session/index");
+const index_3 = require("../../modules/session/index");
 const app_error_1 = require("../../utils/app-error");
 Page({
     data: {
@@ -26,7 +26,7 @@ Page({
         wx.stopPullDownRefresh();
     },
     async loadData() {
-        const session = await (0, index_1.ensureSession)().catch((error) => {
+        const session = await (0, index_3.ensureSession)().catch((error) => {
             const message = (0, app_error_1.toAppError)(error).message;
             this.setData({ loadError: message });
             wx.showToast({ title: message, icon: 'none' });
@@ -42,8 +42,8 @@ Page({
         const userName = session.userName || state.userName;
         try {
             const [menu, recipes] = await Promise.all([
-                menu_1.menuModule.getWeekMenu((0, date_1.getCurrentWeekKey)()),
-                recipe_1.recipeModule.listRecipes(),
+                index_1.menuModule.getWeekMenu((0, date_1.getCurrentWeekKey)()),
+                index_2.recipeModule.listRecipes(),
             ]);
             const todayIndex = (new Date().getDay() || 7) - 1;
             const day = menu.days[todayIndex] || menu.days[0];
@@ -107,6 +107,9 @@ Page({
     },
     openWeekMenu() {
         wx.switchTab({ url: '/pages/menu/index' });
+    },
+    openFridge() {
+        wx.navigateTo({ url: '/pages/fridge/index' });
     },
     openVote() {
         wx.navigateTo({ url: '/pages/vote/index' });

@@ -8,6 +8,8 @@
     "pages/recipes/edit",
     "pages/vote/index",
     "pages/shopping/index",
+    "pages/fridge/index",
+    "pages/fridge/cook",
     "pages/profile/index"
   ],
   "window": {

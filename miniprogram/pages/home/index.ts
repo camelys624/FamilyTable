@@ -116,6 +116,10 @@ Page({
     wx.switchTab({ url: '/pages/menu/index' })
   },
 
+  openFridge() {
+    wx.navigateTo({ url: '/pages/fridge/index' })
+  },
+
   openVote() {
     wx.navigateTo({ url: '/pages/vote/index' })
   },
