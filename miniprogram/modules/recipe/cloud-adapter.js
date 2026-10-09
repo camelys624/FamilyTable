@@ -32,8 +32,7 @@ function toRecipe(remote) {
         note: remote.note || '',
         ingredients: (remote.ingredients || []).map((ingredient) => ({
             name: ingredient.name,
-            amount: ingredient.quantity,
-            unit: ingredient.unit,
+            usedUp: ingredient.usedUp,
         })),
         steps: remote.steps || [],
     };
@@ -48,8 +47,7 @@ function toDraft(recipe) {
         note: recipe.note,
         ingredients: recipe.ingredients.map((ingredient) => ({
             name: ingredient.name,
-            quantity: ingredient.amount,
-            unit: ingredient.unit,
+            usedUp: ingredient.usedUp,
         })),
         steps: recipe.steps,
     };

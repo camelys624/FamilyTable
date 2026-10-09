@@ -14,6 +14,13 @@ function normalizeName(value) {
   return String(value || '').trim().toLocaleLowerCase().replace(/\s+/g, '')
 }
 
+// 旧数据按 quantity/unit 记录，没有 usedUp；一律视为用完、下次需要采购。
+function ingredientView(ingredient) {
+  return {
+    name: ingredient.name,
+    usedUp: typeof ingredient.usedUp === 'boolean' ? ingredient.usedUp : true,
+  }
+}
 
 function recipeView(recipe) {
   return {
@@ -23,29 +30,8 @@ function recipeView(recipe) {
     durationMinutes: recipe.durationMinutes,
     difficulty: recipe.difficulty,
     note: recipe.note || '',
-    ingredients: recipe.ingredients.map((ingredient) => ({
-      name: ingredient.name,
-      quantity: ingredient.quantity,
-      unit: ingredient.unit,
-    })),
+    ingredients: recipe.ingredients.map(ingredientView),
     steps: Array.isArray(recipe.steps) ? recipe.steps : [],
-  }
-}
-
-function recipeSnapshot(recipe) {
-  return {
-    recipeId: recipe._id,
-    name: recipe.name,
-    category: recipe.category,
-    durationMinutes: recipe.durationMinutes,
-    difficulty: recipe.difficulty,
-    note: recipe.note || '',
-    steps: Array.isArray(recipe.steps) ? recipe.steps : [],
-    ingredients: recipe.ingredients.map((ingredient) => ({
-      name: ingredient.name,
-      quantity: ingredient.quantity,
-      unit: ingredient.unit,
-    })),
   }
 }
 
@@ -53,8 +39,7 @@ function normalizeIngredients(ingredients) {
   return ingredients.map((ingredient) => ({
     name: ingredient.name,
     normalizedName: normalizeName(ingredient.name),
-    quantity: ingredient.quantity,
-    unit: ingredient.unit,
+    usedUp: ingredient.usedUp,
   }))
 }
 
@@ -356,4 +341,4 @@ class CloudBaseRecipeRepository {
   }
 }
 
-module.exports = { CloudBaseRecipeRepository, recipeView, recipeSnapshot, normalizeName }
+module.exports = { CloudBaseRecipeRepository, recipeView, normalizeName }

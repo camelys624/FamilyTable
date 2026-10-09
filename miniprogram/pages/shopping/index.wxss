@@ -167,19 +167,12 @@
   font-weight: 650;
 }
 
-.food-amount {
-  color: var(--muted);
-  font-family: monospace;
-  font-size: 23rpx;
-}
-
 .shopping-item.checked .check-box {
   border-color: var(--leaf);
   background: var(--leaf);
 }
 
-.shopping-item.checked .food-name,
-.shopping-item.checked .food-amount {
+.shopping-item.checked .food-name {
   color: #a5afa9;
   text-decoration: line-through;
 }

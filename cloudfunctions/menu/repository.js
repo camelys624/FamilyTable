@@ -47,8 +47,7 @@ function recipeSnapshot(recipe) {
     steps: Array.isArray(recipe.steps) ? recipe.steps : [],
     ingredients: recipe.ingredients.map((ingredient) => ({
       name: ingredient.name,
-      quantity: ingredient.quantity,
-      unit: ingredient.unit,
+      usedUp: typeof ingredient.usedUp === 'boolean' ? ingredient.usedUp : true,
     })),
   }
 }

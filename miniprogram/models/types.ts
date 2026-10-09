@@ -1,9 +1,9 @@
 export type MealType = 'breakfast' | 'lunch' | 'dinner'
 
+/** 家常做法不记用量：只记这道菜做完后这样食材会不会用完，用完的下次做要再买。 */
 export interface Ingredient {
   name: string
-  amount: number
-  unit: string
+  usedUp: boolean
 }
 
 export interface Recipe {
@@ -29,8 +29,9 @@ export interface MenuDay {
   dinner: string[]
 }
 
-export interface ShoppingItem extends Ingredient {
+export interface ShoppingItem {
   id: string
+  name: string
   checked: boolean
   category: string
 }

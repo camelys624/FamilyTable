@@ -56,17 +56,13 @@ function normalizeIngredients(value) {
     if (!ingredient || typeof ingredient !== 'object') {
       throw validationError('食材格式无效', { field: `ingredients[${index}]` })
     }
-    assertPayloadFields(ingredient, ['name', 'quantity', 'unit'])
-    const name = text(ingredient.name, '食材名称', 50)
-    const unit = text(ingredient.unit, '食材单位', 12)
-    const quantity = Number(ingredient.quantity)
-    if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100000) {
-      throw validationError('食材数量需大于 0，且不能超过 100000', { field: `ingredients[${index}].quantity` })
+    assertPayloadFields(ingredient, ['name', 'usedUp'])
+    if (typeof ingredient.usedUp !== 'boolean') {
+      throw validationError('请标记食材是否用完', { field: `ingredients[${index}].usedUp` })
     }
     return {
-      name,
-      quantity: Math.round(quantity * 1000) / 1000,
-      unit,
+      name: text(ingredient.name, '食材名称', 50),
+      usedUp: ingredient.usedUp,
     }
   })
 }
@@ -115,6 +111,7 @@ function normalizePatch(payload) {
   }
   if (Object.prototype.hasOwnProperty.call(patch, 'difficulty')) normalized.difficulty = normalizeDifficulty(patch.difficulty)
   if (Object.prototype.hasOwnProperty.call(patch, 'note')) normalized.note = text(patch.note, '诀窍', 1000, false)
+  if (Object.prototype.hasOwnProperty.call(patch, 'ingredients')) normalized.ingredients = normalizeIngredients(patch.ingredients)
   if (Object.prototype.hasOwnProperty.call(patch, 'steps')) normalized.steps = normalizeSteps(patch.steps)
   if (!Object.keys(normalized).length) throw validationError('至少需要更新一个菜谱字段', { field: 'patch' })
   return { recipeId, patch: normalized }

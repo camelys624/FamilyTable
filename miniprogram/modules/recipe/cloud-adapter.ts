@@ -1,12 +1,6 @@
-import { Recipe } from '../../models/types'
+import { Ingredient, Recipe } from '../../models/types'
 import { CloudClient } from '../../repositories/cloud-client'
 import { RecipeListInput, RecipeModule } from './interface'
-
-interface RemoteIngredient {
-  name: string
-  quantity: number
-  unit: string
-}
 
 interface RemoteRecipe {
   id: string
@@ -16,7 +10,7 @@ interface RemoteRecipe {
   durationMinutes?: number
   difficulty: string
   note?: string
-  ingredients: RemoteIngredient[]
+  ingredients: Ingredient[]
   steps?: string[]
   imagePath?: string
 }
@@ -61,8 +55,7 @@ function toRecipe(remote: RemoteRecipe): Recipe {
     note: remote.note || '',
     ingredients: (remote.ingredients || []).map((ingredient) => ({
       name: ingredient.name,
-      amount: ingredient.quantity,
-      unit: ingredient.unit,
+      usedUp: ingredient.usedUp,
     })),
     steps: remote.steps || [],
   }
@@ -77,8 +70,7 @@ function toDraft(recipe: Recipe) {
     note: recipe.note,
     ingredients: recipe.ingredients.map((ingredient) => ({
       name: ingredient.name,
-      quantity: ingredient.amount,
-      unit: ingredient.unit,
+      usedUp: ingredient.usedUp,
     })),
     steps: recipe.steps,
   }

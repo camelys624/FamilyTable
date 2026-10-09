@@ -2,7 +2,7 @@
   <view class="edit-header">
     <text class="eyebrow">一笔一画 · 记下家常味</text>
     <view class="page-title">{{heading}}</view>
-    <text class="subtle edit-intro">食材逐行添加，用量会直接汇总到采购单；操作步骤也可以按顺序补充。</text>
+    <text class="subtle edit-intro">家常做法不记用量：勾上做完会用完的食材，下次安排这道菜时就知道要买什么。</text>
   </view>
 
   <view class="edit-card paper-card">
@@ -65,79 +65,49 @@
       <view class="field-heading">
         <view>
           <text class="field-label field-label-inline">食材<text class="required-mark">*</text></text>
-          <text class="field-caption">输入关键词筛选，或直接自建</text>
+          <text class="field-caption">点一下切换“用完 / 有剩”</text>
         </view>
-        <view class="add-row-action" bindtap="addIngredient">
-          <text>＋</text>
-          <text>添加食材</text>
-        </view>
+        <text class="ingredient-tally" wx:if="{{ingredients.length}}">{{usedUpCount}} 样要补货</text>
       </view>
 
-      <view class="ingredient-list">
+      <view class="ingredient-list" wx:if="{{ingredients.length}}">
         <view
-          class="ingredient-row {{activeIngredientIndex === ingredientIndex ? 'combobox-open' : ''}}"
+          class="ingredient-row {{item.usedUp ? 'used-up' : ''}}"
           wx:for="{{ingredients}}"
           wx:key="id"
-          wx:for-index="ingredientIndex"
+          data-index="{{index}}"
+          bindtap="toggleIngredientUsedUp"
         >
-          <view class="row-number">{{ingredientIndex + 1}}</view>
-          <view class="ingredient-name-shell">
-            <view
-              class="ingredient-combobox {{activeIngredientIndex === ingredientIndex ? 'active' : ''}}"
-              data-index="{{ingredientIndex}}"
-              bindtap="toggleIngredientCombobox"
-            >
-              <input
-                class="ingredient-search-input"
-                value="{{item.name}}"
-                data-index="{{ingredientIndex}}"
-                bindinput="onIngredientQuery"
-                maxlength="20"
-                placeholder="搜索或输入新食材"
-              />
-              <text class="combobox-arrow">▾</text>
-            </view>
-
-            <view class="combobox-panel" wx:if="{{activeIngredientIndex === ingredientIndex}}">
-              <view class="combobox-tip">选择或创建食材</view>
-              <view
-                class="combobox-option"
-                wx:for="{{filteredIngredientOptions}}"
-                wx:for-item="option"
-                wx:key="*this"
-                data-index="{{ingredientIndex}}"
-                data-name="{{option}}"
-                bindtap="selectIngredient"
-              >
-                <text class="option-name">{{option}}</text>
-                <text class="option-action">选择</text>
-              </view>
-              <view class="create-option" wx:if="{{canCreateIngredient}}" bindtap="createIngredient">
-                <view class="create-plus">＋</view>
-                <view class="create-info">
-                  <text class="create-title">创建“{{ingredientQuery}}”</text>
-                  <text class="create-note">保存后自动加入常用食材库</text>
-                </view>
-              </view>
-              <view class="combobox-empty" wx:if="{{!filteredIngredientOptions.length && !canCreateIngredient}}">无匹配食材，输入名称即可创建</view>
-              <view class="combobox-close" bindtap="closeIngredientCombobox">收起面板</view>
-            </view>
-          </view>
-          <view class="amount-shell">
-            <input
-              class="amount-input"
-              type="digit"
-              value="{{item.amount}}"
-              data-index="{{ingredientIndex}}"
-              bindinput="onIngredientAmount"
-              placeholder="用量"
-            />
-            <text class="amount-unit">{{item.unit || '克'}}</text>
-          </view>
-          <view class="row-remove" data-index="{{ingredientIndex}}" bindtap="removeIngredient">×</view>
+          <view class="used-up-check">{{item.usedUp ? '✓' : ''}}</view>
+          <text class="ingredient-name">{{item.name}}</text>
+          <text class="used-up-label">{{item.usedUp ? '会用完 · 下次要买' : '有剩 · 家里常备'}}</text>
+          <view class="row-remove" data-index="{{index}}" catchtap="removeIngredient">×</view>
         </view>
       </view>
-      <text class="field-help">每行一种食材；用量默认按克计算</text>
+      <view class="ingredient-empty" wx:else>还没有食材，从下面挑一挑，或直接输入新的</view>
+
+      <view class="ingredient-picker">
+        <input
+          class="input-shell ingredient-search-input"
+          value="{{ingredientQuery}}"
+          bindinput="onIngredientQuery"
+          bindconfirm="createIngredient"
+          confirm-type="done"
+          maxlength="20"
+          placeholder="搜索或输入新食材"
+        />
+        <view class="suggestion-list">
+          <view
+            class="suggestion-chip"
+            wx:for="{{ingredientSuggestions}}"
+            wx:key="*this"
+            data-name="{{item}}"
+            bindtap="pickIngredient"
+          >＋ {{item}}</view>
+          <view class="suggestion-chip create-chip" wx:if="{{canCreateIngredient}}" bindtap="createIngredient">＋ 新建“{{ingredientQuery}}”</view>
+        </view>
+        <text class="suggestion-empty" wx:if="{{!ingredientSuggestions.length && !canCreateIngredient}}">没有更多可选的食材了</text>
+      </view>
     </view>
 
     <view class="form-field step-field">
