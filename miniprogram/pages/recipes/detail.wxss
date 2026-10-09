@@ -140,10 +140,14 @@
   font-weight: 700;
 }
 
-.ingredient-amount {
+.ingredient-usage {
   color: var(--muted);
-  font-family: monospace;
-  font-size: 23rpx;
+  font-size: 22rpx;
+}
+
+.ingredient-usage.used-up {
+  color: var(--chili);
+  font-weight: 600;
 }
 
 .step-heading {

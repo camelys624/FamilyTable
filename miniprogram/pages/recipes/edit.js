@@ -15,13 +15,16 @@ const DEFAULT_INGREDIENT_OPTIONS = [
     '鲈鱼',
     '香菇',
 ];
-function filterIngredientOptions(options, query) {
+const SUGGESTION_LIMIT = 8;
+const INGREDIENT_NAME_MAX = 20;
+/** 候选只给还没加进这道菜的食材，避免同一样食材加两次。 */
+function suggestIngredients(options, rows, query) {
+    const added = new Set(rows.map((row) => row.name));
     const keyword = query.trim().toLocaleLowerCase();
-    if (!keyword)
-        return options.slice(0, 6);
     return options
-        .filter((name) => name.toLocaleLowerCase().includes(keyword))
-        .slice(0, 6);
+        .filter((name) => !added.has(name))
+        .filter((name) => !keyword || name.toLocaleLowerCase().includes(keyword))
+        .slice(0, SUGGESTION_LIMIT);
 }
 Page({
     data: {
@@ -39,30 +42,22 @@ Page({
         difficulties: ['简单', '适中', '费点功夫'],
         categoryIndex: 0,
         ingredientOptions: [...DEFAULT_INGREDIENT_OPTIONS],
-        filteredIngredientOptions: DEFAULT_INGREDIENT_OPTIONS.slice(0, 6),
-        activeIngredientIndex: -1,
+        ingredientSuggestions: DEFAULT_INGREDIENT_OPTIONS.slice(0, SUGGESTION_LIMIT),
         ingredientQuery: '',
         canCreateIngredient: false,
-        ingredients: [{
-                id: 'ingredient-0',
-                name: '',
-                amount: '',
-                unit: '克',
-            }],
+        ingredients: [],
+        usedUpCount: 0,
         steps: [{ id: 'step-0', text: '' }],
     },
     async onLoad(options) {
         try {
             const savedRecipes = await recipe_1.recipeModule.listRecipes();
-            const savedIngredientNames = savedRecipes.flatMap((recipe) => recipe.ingredients.map((ingredient) => ingredient.name));
             const ingredientOptions = Array.from(new Set([
                 ...DEFAULT_INGREDIENT_OPTIONS,
-                ...savedIngredientNames,
+                ...savedRecipes.flatMap((recipe) => recipe.ingredients.map((ingredient) => ingredient.name)),
             ])).sort((left, right) => left.localeCompare(right, 'zh-CN'));
-            this.setData({
-                ingredientOptions,
-                filteredIngredientOptions: filterIngredientOptions(ingredientOptions, ''),
-            });
+            this.setData({ ingredientOptions });
+            this.refreshIngredientPicker(this.data.ingredients, '');
             if (!options.id)
                 return;
             const recipe = await recipe_1.recipeModule.getRecipe(options.id);
@@ -75,8 +70,7 @@ Page({
             const ingredients = recipe.ingredients.map((ingredient, index) => ({
                 id: `ingredient-${index}`,
                 name: ingredient.name,
-                amount: String(ingredient.amount),
-                unit: ingredient.unit,
+                usedUp: ingredient.usedUp,
             }));
             const steps = recipe.steps.length
                 ? recipe.steps.map((text, index) => ({ id: `step-${index}`, text }))
@@ -93,9 +87,9 @@ Page({
                 difficulty: recipe.difficulty,
                 note: recipe.note,
                 imagePath: recipe.imagePath || '',
-                ingredients,
                 steps,
             });
+            this.refreshIngredientPicker(ingredients, '');
             wx.setNavigationBarTitle({ title: '编辑菜谱' });
         }
         catch (error) {
@@ -105,7 +99,6 @@ Page({
     onName(event) { this.setData({ name: event.detail.value }); },
     onDuration(event) { this.setData({ duration: event.detail.value }); },
     onNote(event) { this.setData({ note: event.detail.value }); },
-
     chooseRecipeImage() {
         wx.chooseImage({
             count: 1,
@@ -134,7 +127,6 @@ Page({
             },
         });
     },
-
     clearRecipeImage() {
         this.setData({ imagePath: '' });
     },
@@ -147,104 +139,54 @@ Page({
         const categoryIndex = Number(event.detail.value);
         this.setData({ categoryIndex, category: this.data.categories[categoryIndex] });
     },
-    toggleIngredientCombobox(event) {
-        const index = Number(event.currentTarget.dataset.index);
-        if (this.data.activeIngredientIndex === index) {
-            this.closeIngredientCombobox();
-            return;
-        }
-        const query = this.data.ingredients[index].name;
+    /** 食材列表、候选和"新建"入口一起刷新，保证三者对同一份已选食材说话。 */
+    refreshIngredientPicker(ingredients, query, nextOptions) {
+        const ingredientOptions = nextOptions || this.data.ingredientOptions;
+        const name = query.trim();
         this.setData({
-            activeIngredientIndex: index,
+            ingredients,
+            ingredientOptions,
             ingredientQuery: query,
-            filteredIngredientOptions: filterIngredientOptions(this.data.ingredientOptions, query),
-            canCreateIngredient: Boolean(query)
-                && !this.data.ingredientOptions.some((name) => name === query.trim()),
+            ingredientSuggestions: suggestIngredients(ingredientOptions, ingredients, query),
+            canCreateIngredient: Boolean(name)
+                && !ingredientOptions.includes(name)
+                && !ingredients.some((row) => row.name === name),
+            usedUpCount: ingredients.filter((row) => row.usedUp).length,
         });
     },
     onIngredientQuery(event) {
-        const index = Number(event.currentTarget.dataset.index);
-        const query = event.detail.value;
-        const normalized = query.trim();
-        this.setData({
-            [`ingredients[${index}].name`]: query,
-            activeIngredientIndex: index,
-            ingredientQuery: query,
-            filteredIngredientOptions: filterIngredientOptions(this.data.ingredientOptions, query),
-            canCreateIngredient: Boolean(normalized)
-                && !this.data.ingredientOptions.some((name) => name === normalized),
-        });
+        this.refreshIngredientPicker(this.data.ingredients, event.detail.value);
     },
-    selectIngredient(event) {
-        const index = Number(event.currentTarget.dataset.index);
-        const name = event.currentTarget.dataset.name;
+    addIngredientByName(rawName) {
+        const name = rawName.trim().slice(0, INGREDIENT_NAME_MAX);
         if (!name)
             return;
-        this.setData({
-            [`ingredients[${index}].name`]: name,
-            [`ingredients[${index}].unit`]: '克',
-            activeIngredientIndex: -1,
-            ingredientQuery: '',
-            canCreateIngredient: false,
-        });
-    },
-    createIngredient() {
-        const index = this.data.activeIngredientIndex;
-        const name = this.data.ingredientQuery.trim();
-        if (index < 0 || !name)
-            return;
-        const ingredientOptions = Array.from(new Set([
-            ...this.data.ingredientOptions,
-            name,
-        ])).sort((left, right) => left.localeCompare(right, 'zh-CN'));
-        this.setData({
-            [`ingredients[${index}].name`]: name,
-            [`ingredients[${index}].unit`]: '克',
-            ingredientOptions,
-            filteredIngredientOptions: filterIngredientOptions(ingredientOptions, name),
-            activeIngredientIndex: -1,
-            ingredientQuery: '',
-            canCreateIngredient: false,
-        });
-    },
-    closeIngredientCombobox() {
-        this.setData({
-            activeIngredientIndex: -1,
-            ingredientQuery: '',
-            canCreateIngredient: false,
-        });
-    },
-    onIngredientAmount(event) {
-        const index = Number(event.currentTarget.dataset.index);
-        this.setData({ [`ingredients[${index}].amount`]: event.detail.value });
-    },
-    addIngredient() {
-        const activeIngredientIndex = this.data.ingredients.length;
-        this.setData({
-            ingredients: [...this.data.ingredients, {
-                    id: `ingredient-${Date.now()}`,
-                    name: '',
-                    amount: '',
-                    unit: '克',
-                }],
-            activeIngredientIndex,
-            ingredientQuery: '',
-            filteredIngredientOptions: filterIngredientOptions(this.data.ingredientOptions, ''),
-            canCreateIngredient: false,
-        });
-    },
-    removeIngredient(event) {
-        if (this.data.ingredients.length === 1) {
-            wx.showToast({ title: '至少保留一行食材', icon: 'none' });
+        if (this.data.ingredients.some((row) => row.name === name)) {
+            wx.showToast({ title: `“${name}”已经加过了`, icon: 'none' });
             return;
         }
+        const ingredients = [...this.data.ingredients, { id: `ingredient-${Date.now()}`, name, usedUp: true }];
+        const options = this.data.ingredientOptions;
+        const ingredientOptions = options.includes(name)
+            ? options
+            : [...options, name].sort((left, right) => left.localeCompare(right, 'zh-CN'));
+        this.refreshIngredientPicker(ingredients, '', ingredientOptions);
+    },
+    pickIngredient(event) {
+        this.addIngredientByName(event.currentTarget.dataset.name || '');
+    },
+    createIngredient() {
+        this.addIngredientByName(this.data.ingredientQuery);
+    },
+    toggleIngredientUsedUp(event) {
         const index = Number(event.currentTarget.dataset.index);
-        this.setData({
-            ingredients: this.data.ingredients.filter((_, rowIndex) => rowIndex !== index),
-            activeIngredientIndex: -1,
-            ingredientQuery: '',
-            canCreateIngredient: false,
-        });
+        const ingredients = this.data.ingredients.map((row, rowIndex) => rowIndex === index ? { ...row, usedUp: !row.usedUp } : row);
+        this.refreshIngredientPicker(ingredients, this.data.ingredientQuery);
+    },
+    removeIngredient(event) {
+        const index = Number(event.currentTarget.dataset.index);
+        const ingredients = this.data.ingredients.filter((_, rowIndex) => rowIndex !== index);
+        this.refreshIngredientPicker(ingredients, this.data.ingredientQuery);
     },
     onStepInput(event) {
         const index = Number(event.currentTarget.dataset.index);
@@ -271,33 +213,14 @@ Page({
             wx.showToast({ title: '先写下菜名', icon: 'none' });
             return;
         }
-        const ingredientRows = this.data.ingredients
-            .map((ingredient) => ({
-            name: ingredient.name.trim(),
-            amount: ingredient.amount.trim(),
-            unit: ingredient.unit || '克',
-        }))
-            .filter((ingredient) => ingredient.name || ingredient.amount);
-        if (!ingredientRows.length) {
+        const ingredients = this.data.ingredients.map((row) => ({
+            name: row.name,
+            usedUp: row.usedUp,
+        }));
+        if (!ingredients.length) {
             wx.showToast({ title: '至少添加一种食材', icon: 'none' });
             return;
         }
-        if (ingredientRows.some((ingredient) => !ingredient.name)) {
-            wx.showToast({ title: '请选择或填写食材名称', icon: 'none' });
-            return;
-        }
-        if (ingredientRows.some((ingredient) => {
-            const amount = Number(ingredient.amount);
-            return !Number.isFinite(amount) || amount <= 0 || amount > 100000;
-        })) {
-            wx.showToast({ title: '克数需大于 0，且不能超过 100000', icon: 'none' });
-            return;
-        }
-        const ingredients = ingredientRows.map((ingredient) => ({
-            name: ingredient.name,
-            amount: Number(ingredient.amount),
-            unit: ingredient.unit,
-        }));
         const steps = this.data.steps
             .map((step) => step.text.trim())
             .filter(Boolean);
@@ -310,26 +233,31 @@ Page({
             wx.showToast({ title: '用时请填写 1～1440 分钟', icon: 'none' });
             return;
         }
-        const tones = ['green', 'tomato', 'ocean', 'grain', 'berry'];
-        const existing = this.data.recipeId ? await recipe_1.recipeModule.getRecipe(this.data.recipeId) : undefined;
-        const recipe = {
-            id: existing?.id || `recipe-${Date.now()}`,
-            name,
-            initial: name.slice(0, 1),
-            category: this.data.category,
-            duration: Math.round(duration),
-            difficulty: this.data.difficulty,
-            tone: existing?.tone || tones[Date.now() % tones.length],
-            note: this.data.note.trim() || '这是家里新记下的一道菜。',
-            imagePath: this.data.imagePath || '',
-            ingredients,
-            steps,
-        };
-        if (existing)
-            await recipe_1.recipeModule.updateRecipe(recipe);
-        else
-            await recipe_1.recipeModule.createRecipe(recipe);
-        wx.showToast({ title: existing ? '菜谱已更新' : '已收入菜谱簿', icon: 'success' });
-        setTimeout(() => wx.navigateBack(), 500);
+        try {
+            const tones = ['green', 'tomato', 'ocean', 'grain', 'berry'];
+            const existing = this.data.recipeId ? await recipe_1.recipeModule.getRecipe(this.data.recipeId) : undefined;
+            const recipe = {
+                id: existing?.id || `recipe-${Date.now()}`,
+                name,
+                initial: name.slice(0, 1),
+                category: this.data.category,
+                duration: Math.round(duration),
+                difficulty: this.data.difficulty,
+                tone: existing?.tone || tones[Date.now() % tones.length],
+                note: this.data.note.trim() || '这是家里新记下的一道菜。',
+                imagePath: this.data.imagePath || '',
+                ingredients,
+                steps,
+            };
+            if (existing)
+                await recipe_1.recipeModule.updateRecipe(recipe);
+            else
+                await recipe_1.recipeModule.createRecipe(recipe);
+            wx.showToast({ title: existing ? '菜谱已更新' : '已收入菜谱簿', icon: 'success' });
+            setTimeout(() => wx.navigateBack(), 500);
+        }
+        catch (error) {
+            wx.showToast({ title: error instanceof Error ? error.message : '保存失败，请重试', icon: 'none' });
+        }
     },
 });

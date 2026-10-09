@@ -46,7 +46,6 @@
         >
           <view class="check-box">{{food.checked ? '✓' : ''}}</view>
           <text class="food-name">{{food.name}}</text>
-          <text class="food-amount">{{food.amount}}{{food.unit}}</text>
         </view>
       </view>
     </view>

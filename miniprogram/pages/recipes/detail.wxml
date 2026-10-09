@@ -22,7 +22,7 @@
       <view class="ingredient-row" wx:for="{{recipe.ingredients}}" wx:key="name">
         <text class="ingredient-index">{{index + 1}}</text>
         <text class="ingredient-name">{{item.name}}</text>
-        <text class="ingredient-amount">{{item.amount}}{{item.unit}}</text>
+        <text class="ingredient-usage {{item.usedUp ? 'used-up' : ''}}">{{item.usedUp ? '会用完 · 下次要买' : '有剩'}}</text>
       </view>
     </view>
 
@@ -41,7 +41,7 @@
 
     <view class="menu-note" wx:if="{{usageCount}}">
       <view class="note-pin"></view>
-      <text>这道菜本周已安排 {{usageCount}} 次，采购单会自动汇总对应食材。</text>
+      <text>这道菜本周已安排 {{usageCount}} 次，会用完的食材已自动列进采购单。</text>
     </view>
 
     <view class="detail-actions">

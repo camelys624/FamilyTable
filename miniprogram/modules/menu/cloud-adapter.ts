@@ -1,12 +1,6 @@
-import { MealType, Recipe } from '../../models/types'
+import { Ingredient, MealType, Recipe } from '../../models/types'
 import { CloudClient } from '../../repositories/cloud-client'
 import { AddMenuItemInput, MenuDayView, MenuModule, RemoveMenuItemInput, WeekMenuView } from './interface'
-
-interface RemoteIngredient {
-  name: string
-  quantity: number
-  unit: string
-}
 
 interface RemoteRecipeSnapshot {
   recipeId: string
@@ -15,7 +9,7 @@ interface RemoteRecipeSnapshot {
   durationMinutes?: number
   difficulty?: string
   note?: string
-  ingredients: RemoteIngredient[]
+  ingredients: Ingredient[]
   steps?: string[]
 }
 
@@ -65,8 +59,7 @@ function toRecipe(snapshot: RemoteRecipeSnapshot): Recipe {
     note: snapshot.note || '',
     ingredients: (snapshot.ingredients || []).map((ingredient) => ({
       name: ingredient.name,
-      amount: ingredient.quantity,
-      unit: ingredient.unit,
+      usedUp: ingredient.usedUp,
     })),
     steps: snapshot.steps || [],
   }

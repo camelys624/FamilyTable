@@ -19,7 +19,7 @@ function toRecipe(snapshot) {
         difficulty: snapshot.difficulty === 'medium' ? '适中' : snapshot.difficulty === 'hard' ? '困难' : '简单',
         tone: toneForRecipe(snapshot.recipeId),
         note: snapshot.note || '',
-        ingredients: (snapshot.ingredients || []).map((ingredient) => ({ name: ingredient.name, amount: ingredient.quantity, unit: ingredient.unit })),
+        ingredients: (snapshot.ingredients || []).map((ingredient) => ({ name: ingredient.name, usedUp: ingredient.usedUp })),
         steps: snapshot.steps || [],
     };
 }

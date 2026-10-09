@@ -34,9 +34,9 @@ const seedRecipes = [
         tone: 'tomato',
         note: '鸡蛋嫩一点，汤汁留着拌饭。',
         ingredients: [
-            { name: '番茄', amount: 2, unit: '个' },
-            { name: '鸡蛋', amount: 3, unit: '个' },
-            { name: '小葱', amount: 1, unit: '把' },
+            { name: '番茄', usedUp: true },
+            { name: '鸡蛋', usedUp: true },
+            { name: '小葱', usedUp: false },
         ],
         steps: [
             '番茄切块，鸡蛋打散备用。',
@@ -54,9 +54,9 @@ const seedRecipes = [
         tone: 'berry',
         note: '酸甜收汁，孩子也能吃。',
         ingredients: [
-            { name: '猪肋排', amount: 600, unit: '克' },
-            { name: '山楂', amount: 8, unit: '颗' },
-            { name: '冰糖', amount: 30, unit: '克' },
+            { name: '猪肋排', usedUp: true },
+            { name: '山楂', usedUp: true },
+            { name: '冰糖', usedUp: false },
         ],
         steps: [
             '小排焯水洗净，山楂去核。',
@@ -74,8 +74,8 @@ const seedRecipes = [
         tone: 'green',
         note: '大火快炒，菜梗先下锅。',
         ingredients: [
-            { name: '菜心', amount: 400, unit: '克' },
-            { name: '大蒜', amount: 4, unit: '瓣' },
+            { name: '菜心', usedUp: true },
+            { name: '大蒜', usedUp: false },
         ],
         steps: [
             '菜心洗净，菜梗和菜叶分开。',
@@ -93,9 +93,9 @@ const seedRecipes = [
         tone: 'grain',
         note: '前一晚预约煮粥，早上拌入鸡丝。',
         ingredients: [
-            { name: '大米', amount: 150, unit: '克' },
-            { name: '鸡胸肉', amount: 180, unit: '克' },
-            { name: '香菇', amount: 4, unit: '朵' },
+            { name: '大米', usedUp: false },
+            { name: '鸡胸肉', usedUp: true },
+            { name: '香菇', usedUp: true },
         ],
         steps: [
             '大米洗净后煮成稠粥。',
@@ -113,9 +113,9 @@ const seedRecipes = [
         tone: 'ocean',
         note: '水开后上锅，关火再焖两分钟。',
         ingredients: [
-            { name: '鲈鱼', amount: 1, unit: '条' },
-            { name: '生姜', amount: 1, unit: '块' },
-            { name: '小葱', amount: 1, unit: '把' },
+            { name: '鲈鱼', usedUp: true },
+            { name: '生姜', usedUp: false },
+            { name: '小葱', usedUp: false },
         ],
         steps: [
             '鲈鱼处理干净，在鱼身两侧划刀。',
@@ -170,6 +170,15 @@ function ensureState() {
         state.recipes.forEach((recipe) => {
             if (!Array.isArray(recipe.steps)) {
                 recipe.steps = [];
+                changed = true;
+            }
+            // 旧版本按克数记录食材；改为“是否用完”后，旧数据一律视为用完、下次需要采购。
+            if (recipe.ingredients.some((ingredient) => typeof ingredient.usedUp !== 'boolean')) {
+                recipe.ingredients = recipe.ingredients.map((ingredient) => ({
+                    name: ingredient.name,
+                    usedUp: typeof ingredient.usedUp === 'boolean' ? ingredient.usedUp : true,
+                }));
+                state.shoppingMenuSignature = '';
                 changed = true;
             }
         });
@@ -269,19 +278,16 @@ function generateShoppingList() {
         ['breakfast', 'lunch', 'dinner'].forEach((mealType) => {
             day[mealType].forEach((recipeId) => {
                 const recipe = state.recipes.find((item) => item.id === recipeId);
+                // 有剩的食材家里常备，不进采购单；同名食材只买一次。
                 recipe?.ingredients.forEach((ingredient) => {
-                    const key = `${ingredient.name}-${ingredient.unit}`;
-                    const current = merged.get(key);
-                    if (current)
-                        current.amount += ingredient.amount;
-                    else {
-                        merged.set(key, {
-                            ...ingredient,
-                            id: `item-${Date.now()}-${merged.size}`,
-                            checked: false,
-                            category: getIngredientCategory(ingredient.name),
-                        });
-                    }
+                    if (!ingredient.usedUp || merged.has(ingredient.name))
+                        return;
+                    merged.set(ingredient.name, {
+                        id: `item-${Date.now()}-${merged.size}`,
+                        name: ingredient.name,
+                        checked: false,
+                        category: getIngredientCategory(ingredient.name),
+                    });
                 });
             });
         });
@@ -319,8 +325,6 @@ function addShoppingItem(name) {
     state.shoppingItems.push({
         id: `manual-${Date.now()}`,
         name,
-        amount: 1,
-        unit: '份',
         checked: false,
         category: '手动添加',
     });
