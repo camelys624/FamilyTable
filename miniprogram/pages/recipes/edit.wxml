@@ -67,6 +67,9 @@
           <text class="field-label field-label-inline">食材<text class="required-mark">*</text></text>
           <text class="field-caption">点一下切换“用完 / 有剩”</text>
         </view>
+        <view class="add-row-action ai-action {{aiExtracting ? 'is-loading' : ''}}" bindtap="extractIngredients">
+          <text>{{aiExtracting ? '整理中…' : 'AI 整理'}}</text>
+        </view>
         <text class="ingredient-tally" wx:if="{{ingredients.length}}">{{usedUpCount}} 样要补货</text>
       </view>
 
@@ -107,6 +110,74 @@
           <view class="suggestion-chip create-chip" wx:if="{{canCreateIngredient}}" bindtap="createIngredient">＋ 新建“{{ingredientQuery}}”</view>
         </view>
         <text class="suggestion-empty" wx:if="{{!ingredientSuggestions.length && !canCreateIngredient}}">没有更多可选的食材了</text>
+      </view>
+      <view class="ai-review-message" wx:if="{{aiReviewMessage}}">{{aiReviewMessage}}</view>
+
+      <view class="ai-review-panel" wx:if="{{aiReviewVisible}}">
+        <view class="ai-review-heading">
+          <view>
+            <text class="ai-review-title">先看看 AI 找到了什么</text>
+            <text class="ai-review-caption">新增食材默认标记为用完，删除建议默认不选</text>
+          </view>
+          <view class="ai-review-close" bindtap="discardAiReview">收起</view>
+        </view>
+
+        <view class="ai-review-group" wx:if="{{aiReviewAdd.length}}">
+          <text class="ai-review-group-title">建议新增</text>
+          <view
+            class="ai-suggestion-row {{item.selected ? 'selected' : ''}}"
+            wx:for="{{aiReviewAdd}}"
+            wx:key="id"
+            wx:for-item="item"
+            wx:for-index="suggestionIndex"
+            data-group="add"
+            data-index="{{suggestionIndex}}"
+            bindtap="toggleAiSuggestion"
+          >
+            <view class="ai-check {{item.selected ? 'checked' : ''}}">{{item.selected ? '✓' : '＋'}}</view>
+            <view class="ai-suggestion-main">
+              <view class="ai-suggestion-title-row">
+                <text class="ai-suggestion-name">{{item.name}}</text>
+              </view>
+              <view class="ai-suggestion-meta">
+                <text>{{item.evidenceLabel}}</text>
+                <text wx:if="{{item.evidenceText}}">“{{item.evidenceText}}”</text>
+                <text class="ai-confidence {{item.confidence}}">{{item.confidenceLabel}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="ai-review-group" wx:if="{{aiReviewRemove.length}}">
+          <text class="ai-review-group-title remove-title">可能多余</text>
+          <view
+            class="ai-suggestion-row remove-suggestion {{item.selected ? 'selected' : ''}}"
+            wx:for="{{aiReviewRemove}}"
+            wx:key="id"
+            wx:for-item="item"
+            wx:for-index="suggestionIndex"
+            data-group="remove"
+            data-index="{{suggestionIndex}}"
+            bindtap="toggleAiSuggestion"
+          >
+            <view class="ai-check {{item.selected ? 'checked remove-check' : 'remove-check'}}">{{item.selected ? '✓' : '×'}}</view>
+            <view class="ai-suggestion-main">
+              <view class="ai-suggestion-title-row">
+                <text class="ai-suggestion-name">{{item.name}}</text>
+              </view>
+              <view class="ai-suggestion-meta">
+                <text>步骤中未提及，可能是准备材料</text>
+                <text class="ai-confidence low">待确认</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="ai-review-warning" wx:for="{{aiReviewWarnings}}" wx:key="*this">{{item}}</view>
+        <view class="ai-review-actions">
+          <view class="secondary-button ai-dismiss-button" bindtap="discardAiReview">先手动填写</view>
+          <view class="primary-button ai-apply-button" bindtap="applyAiReview">应用选中建议</view>
+        </view>
       </view>
     </view>
 

@@ -1,5 +1,11 @@
 'use strict'
 
+const {
+  normalizeModelOutput,
+  reconcileIngredients,
+  validateExtractionInput,
+} = require('./ingredient-assistant')
+
 const SAFE_ERROR_CODES = new Set([
   'UNAUTHENTICATED',
   'FAMILY_REQUIRED',
@@ -10,8 +16,25 @@ const SAFE_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
   'REQUEST_IN_PROGRESS',
   'DATABASE_NOT_INITIALIZED',
+  'FEATURE_UNAVAILABLE',
+  'RATE_LIMITED',
+  'INVALID_RESPONSE',
   'INTERNAL_ERROR',
 ])
+const assistantRateWindows = new Map()
+
+function requireAssistantRateLimit(openid) {
+  const now = Date.now()
+  const windowMs = 60 * 1000
+  const limit = 5
+  const recent = (assistantRateWindows.get(openid) || []).filter((timestamp) => now - timestamp < windowMs)
+  if (recent.length >= limit) {
+    throw Object.assign(new Error('AI 请求次数较多，请稍后再试'), { code: 'RATE_LIMITED' })
+  }
+  recent.push(now)
+  if (assistantRateWindows.size > 1000) assistantRateWindows.delete(assistantRateWindows.keys().next().value)
+  assistantRateWindows.set(openid, recent)
+}
 
 function createRequestId(event) {
   const supplied = typeof event?.requestId === 'string' ? event.requestId.trim() : ''
@@ -146,7 +169,7 @@ function failure(error, requestId, logger) {
   }
 }
 
-function createRecipeHandler(repository, logger = console) {
+function createRecipeHandler(repository, logger = console, ingredientAssistant = null) {
   return async function handleRecipe(event = {}, identity = {}) {
     const requestId = createRequestId(event)
     try {
@@ -154,6 +177,29 @@ function createRecipeHandler(repository, logger = console) {
         throw Object.assign(new Error('微信身份已失效，请重新进入小程序'), { code: 'UNAUTHENTICATED' })
       }
       const payload = event.payload && typeof event.payload === 'object' ? event.payload : {}
+      if (event.action === 'recipe.extractIngredients') {
+        const input = validateExtractionInput(payload)
+        if (typeof repository.getContext !== 'function') {
+          throw Object.assign(new Error('AI 整理暂时不可用，请稍后重试'), { code: 'FEATURE_UNAVAILABLE' })
+        }
+        await repository.getContext(identity.openid)
+        requireAssistantRateLimit(identity.openid)
+        if (!ingredientAssistant || typeof ingredientAssistant.extract !== 'function') {
+          throw Object.assign(new Error('AI 整理暂未配置，请继续手动填写'), { code: 'FEATURE_UNAVAILABLE' })
+        }
+        const modelOutput = await ingredientAssistant.extract(input.steps, requestId)
+        const normalized = normalizeModelOutput(modelOutput, input.steps)
+        const { warnings: reconciliationWarnings, ...diff } = reconcileIngredients(normalized.ingredients, input.existingIngredients)
+        return {
+          ok: true,
+          data: {
+            detected: normalized.ingredients,
+            diff,
+            warnings: [...normalized.warnings, ...reconciliationWarnings],
+          },
+          requestId,
+        }
+      }
       if (event.action === 'recipe.list') {
         assertPayloadFields(payload, ['keyword', 'category', 'pageSize', 'cursor'])
         const pageSize = payload.pageSize === undefined ? 100 : Number(payload.pageSize)

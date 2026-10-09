@@ -1,6 +1,33 @@
 import { Ingredient, Recipe } from '../../models/types'
 import { CloudClient } from '../../repositories/cloud-client'
-import { RecipeListInput, RecipeModule } from './interface'
+import { IngredientExtractionInput, IngredientExtractionResult, RecipeListInput, RecipeModule } from './interface'
+
+interface RemoteIngredientSuggestion {
+  name: string
+  quantity: number | null
+  unit: string
+  quantityText: string
+  evidenceStepIndexes: number[]
+  evidenceQuotes: string[]
+  confidence: 'high' | 'medium' | 'low'
+}
+
+interface RemoteIngredientUpdate {
+  existing: RemoteIngredientSuggestion
+  suggested: RemoteIngredientSuggestion
+  reason: string
+}
+
+interface RemoteIngredientExtractionResult {
+  detected: RemoteIngredientSuggestion[]
+  diff: {
+    add: RemoteIngredientSuggestion[]
+    update: RemoteIngredientUpdate[]
+    removeCandidates: RemoteIngredientSuggestion[]
+    needsQuantity: RemoteIngredientSuggestion[]
+  }
+  warnings: string[]
+}
 
 interface RemoteRecipe {
   id: string
@@ -22,6 +49,34 @@ interface RecipeListResult {
 
 interface RecipeResult {
   recipe: RemoteRecipe
+}
+function toIngredientSuggestion(remote: RemoteIngredientSuggestion) {
+  return {
+    name: remote.name,
+    amount: remote.quantity === null || remote.quantity === undefined ? null : Number(remote.quantity),
+    unit: remote.unit || '',
+    amountText: remote.quantityText || '',
+    evidenceStepIndexes: remote.evidenceStepIndexes || [],
+    evidenceQuotes: remote.evidenceQuotes || [],
+    confidence: remote.confidence || 'low',
+  }
+}
+
+function toIngredientExtractionResult(remote: RemoteIngredientExtractionResult): IngredientExtractionResult {
+  return {
+    detected: (remote.detected || []).map(toIngredientSuggestion),
+    diff: {
+      add: (remote.diff?.add || []).map(toIngredientSuggestion),
+      update: (remote.diff?.update || []).map((item) => ({
+        existing: toIngredientSuggestion(item.existing),
+        suggested: toIngredientSuggestion(item.suggested),
+        reason: item.reason || '',
+      })),
+      removeCandidates: (remote.diff?.removeCandidates || []).map(toIngredientSuggestion),
+      needsQuantity: (remote.diff?.needsQuantity || []).map(toIngredientSuggestion),
+    },
+    warnings: remote.warnings || [],
+  }
 }
 
 const difficultyToRemote: Record<string, string> = {
@@ -106,9 +161,21 @@ export class CloudRecipeAdapter implements RecipeModule {
     return { ...toRecipe(result.recipe), imagePath: recipe.imagePath || '' }
   }
 
+  async extractIngredients(input: IngredientExtractionInput) {
+    const result = await this.client.call<RemoteIngredientExtractionResult>('recipe', 'recipe.extractIngredients', {
+      steps: input.steps,
+      existingIngredients: input.existingIngredients.map((ingredient) => ({
+        name: ingredient.name,
+        quantity: ingredient.amount,
+        unit: ingredient.unit,
+      })),
+    })
+    return toIngredientExtractionResult(result)
+  }
+
   async deleteRecipe(recipeId: string) {
     await this.client.call('recipe', 'recipe.delete', { recipeId })
   }
 }
 
-export { toRecipe, toDraft, toneForRecipe }
+export { toRecipe, toDraft, toneForRecipe, toIngredientExtractionResult }

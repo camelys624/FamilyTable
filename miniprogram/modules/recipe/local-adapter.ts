@@ -1,7 +1,7 @@
 import { Recipe } from '../../models/types'
 import { AppError } from '../../utils/app-error'
 import { addRecipe as addLocalRecipe, deleteRecipe as deleteLocalRecipe, findRecipe, getState, updateRecipe as updateLocalRecipe } from '../../services/store'
-import { RecipeListInput, RecipeModule } from './interface'
+import { IngredientExtractionInput, IngredientExtractionResult, RecipeListInput, RecipeModule } from './interface'
 
 export class LocalRecipeAdapter implements RecipeModule {
   async listRecipes(input: RecipeListInput = {}) {
@@ -30,5 +30,8 @@ export class LocalRecipeAdapter implements RecipeModule {
 
   async deleteRecipe(recipeId: string) {
     if (!deleteLocalRecipe(recipeId)) throw new AppError('NOT_FOUND', '这道菜已经不在菜谱簿里了')
+  }
+  async extractIngredients(_input: IngredientExtractionInput): Promise<IngredientExtractionResult> {
+    throw new AppError('FEATURE_UNAVAILABLE', 'AI 整理需要连接云端，请继续手动填写')
   }
 }

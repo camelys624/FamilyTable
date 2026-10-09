@@ -4,6 +4,7 @@
   "private": true,
   "main": "index.js",
   "dependencies": {
+    "openai": "4.104.0",
     "wx-server-sdk": "^4.0.2"
   }
 }

@@ -1,10 +1,41 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toneForRecipe = exports.toDraft = exports.toRecipe = exports.CloudRecipeAdapter = void 0;
+exports.CloudRecipeAdapter = void 0;
+exports.toRecipe = toRecipe;
+exports.toDraft = toDraft;
+exports.toneForRecipe = toneForRecipe;
+exports.toIngredientExtractionResult = toIngredientExtractionResult;
+function toIngredientSuggestion(remote) {
+    return {
+        name: remote.name,
+        amount: remote.quantity === null || remote.quantity === undefined ? null : Number(remote.quantity),
+        unit: remote.unit || '',
+        amountText: remote.quantityText || '',
+        evidenceStepIndexes: remote.evidenceStepIndexes || [],
+        evidenceQuotes: remote.evidenceQuotes || [],
+        confidence: remote.confidence || 'low',
+    };
+}
+function toIngredientExtractionResult(remote) {
+    return {
+        detected: (remote.detected || []).map(toIngredientSuggestion),
+        diff: {
+            add: (remote.diff?.add || []).map(toIngredientSuggestion),
+            update: (remote.diff?.update || []).map((item) => ({
+                existing: toIngredientSuggestion(item.existing),
+                suggested: toIngredientSuggestion(item.suggested),
+                reason: item.reason || '',
+            })),
+            removeCandidates: (remote.diff?.removeCandidates || []).map(toIngredientSuggestion),
+            needsQuantity: (remote.diff?.needsQuantity || []).map(toIngredientSuggestion),
+        },
+        warnings: remote.warnings || [],
+    };
+}
 const difficultyToRemote = {
-    '简单': 'easy',
-    '适中': 'medium',
-    '困难': 'hard',
+    简单: 'easy',
+    适中: 'medium',
+    困难: 'hard',
     '费点功夫': 'hard',
 };
 function toneForRecipe(id) {
@@ -14,7 +45,6 @@ function toneForRecipe(id) {
         value = (value * 31 + character.charCodeAt(0)) >>> 0;
     return tones[value % tones.length];
 }
-exports.toneForRecipe = toneForRecipe;
 function toRecipe(remote) {
     return {
         id: remote.id,
@@ -37,7 +67,6 @@ function toRecipe(remote) {
         steps: remote.steps || [],
     };
 }
-exports.toRecipe = toRecipe;
 function toDraft(recipe) {
     return {
         name: recipe.name,
@@ -52,7 +81,6 @@ function toDraft(recipe) {
         steps: recipe.steps,
     };
 }
-exports.toDraft = toDraft;
 class CloudRecipeAdapter {
     constructor(client) {
         this.client = client;
@@ -79,6 +107,17 @@ class CloudRecipeAdapter {
             patch: toDraft(recipe),
         });
         return { ...toRecipe(result.recipe), imagePath: recipe.imagePath || '' };
+    }
+    async extractIngredients(input) {
+        const result = await this.client.call('recipe', 'recipe.extractIngredients', {
+            steps: input.steps,
+            existingIngredients: input.existingIngredients.map((ingredient) => ({
+                name: ingredient.name,
+                quantity: ingredient.amount,
+                unit: ingredient.unit,
+            })),
+        });
+        return toIngredientExtractionResult(result);
     }
     async deleteRecipe(recipeId) {
         await this.client.call('recipe', 'recipe.delete', { recipeId });

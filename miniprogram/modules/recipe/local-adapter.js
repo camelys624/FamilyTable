@@ -29,5 +29,8 @@ class LocalRecipeAdapter {
         if (!(0, store_1.deleteRecipe)(recipeId))
             throw new app_error_1.AppError('NOT_FOUND', '这道菜已经不在菜谱簿里了');
     }
+    async extractIngredients(_input) {
+        throw new app_error_1.AppError('FEATURE_UNAVAILABLE', 'AI 整理需要连接云端，请继续手动填写');
+    }
 }
 exports.LocalRecipeAdapter = LocalRecipeAdapter;

@@ -1,5 +1,5 @@
 import { Ingredient, Recipe } from '../../models/types'
-import { recipeModule } from '../../modules/recipe/index'
+import { IngredientExtractionResult, IngredientSuggestion, recipeModule } from '../../modules/recipe/index'
 
 const DEFAULT_INGREDIENT_OPTIONS = [
   '大米',
@@ -31,7 +31,7 @@ interface StepRow {
 }
 
 interface RowEvent {
-  currentTarget: { dataset: { index?: number; name?: string; value?: string } }
+  currentTarget: { dataset: { index?: number; name?: string; value?: string; group?: string } }
 }
 
 interface FormEvent extends RowEvent {
@@ -46,6 +46,56 @@ function suggestIngredients(options: string[], rows: IngredientRow[], query: str
     .filter((name) => !added.has(name))
     .filter((name) => !keyword || name.toLocaleLowerCase().includes(keyword))
     .slice(0, SUGGESTION_LIMIT)
+}
+
+interface AiSuggestionRow extends IngredientSuggestion {
+  id: string
+  selected: boolean
+  confidenceLabel: string
+  evidenceLabel: string
+  evidenceText: string
+}
+
+function normalizeIngredientName(value: string) {
+  return value.trim().toLocaleLowerCase().replace(/\s+/g, '')
+}
+
+function confidenceLabel(value: IngredientSuggestion['confidence']) {
+  if (value === 'high') return '较确定'
+  if (value === 'medium') return '可能'
+  return '待确认'
+}
+
+function toDisplaySuggestion(suggestion: IngredientSuggestion, id: string, selected: boolean): AiSuggestionRow {
+  return {
+    ...suggestion,
+    id,
+    selected,
+    confidenceLabel: confidenceLabel(suggestion.confidence),
+    evidenceLabel: suggestion.evidenceStepIndexes.length
+      ? `第 ${suggestion.evidenceStepIndexes[0] + 1} 步`
+      : '步骤中未提及',
+    evidenceText: suggestion.evidenceQuotes[0] || '',
+  }
+}
+
+function draftFingerprint(steps: string[], ingredients: IngredientRow[]) {
+  return JSON.stringify({
+    steps,
+    ingredients: ingredients.map((ingredient) => ({
+      name: ingredient.name.trim(),
+      usedUp: ingredient.usedUp,
+    })),
+  })
+}
+
+function buildAiReview(result: IngredientExtractionResult) {
+  // 用量仅是 AI 提取的附带信息，不修改菜谱的“用完 / 有剩”标记。
+  const add = result.diff.add.map((suggestion, index) =>
+    toDisplaySuggestion(suggestion, `add-${index}-${normalizeIngredientName(suggestion.name)}`, true))
+  const remove = result.diff.removeCandidates.map((suggestion, index) =>
+    toDisplaySuggestion(suggestion, `remove-${index}-${normalizeIngredientName(suggestion.name)}`, false))
+  return { add, remove }
 }
 
 Page({
@@ -67,6 +117,14 @@ Page({
     ingredientSuggestions: DEFAULT_INGREDIENT_OPTIONS.slice(0, SUGGESTION_LIMIT),
     ingredientQuery: '',
     canCreateIngredient: false,
+    aiExtracting: false,
+    aiReviewVisible: false,
+    aiReviewEmpty: false,
+    aiReviewMessage: '',
+    aiReviewWarnings: [] as string[],
+    aiReviewAdd: [] as AiSuggestionRow[],
+    aiReviewRemove: [] as AiSuggestionRow[],
+    aiReviewFingerprint: '',
     ingredients: [] as IngredientRow[],
     usedUpCount: 0,
     steps: [{ id: 'step-0', text: '' }] as StepRow[],
@@ -219,6 +277,136 @@ Page({
     const index = Number(event.currentTarget.dataset.index)
     const ingredients = this.data.ingredients.filter((_, rowIndex) => rowIndex !== index)
     this.refreshIngredientPicker(ingredients, this.data.ingredientQuery)
+  },
+
+  async extractIngredients() {
+    if (this.data.aiExtracting) return
+    const steps = this.data.steps.map((step) => step.text.trim()).filter(Boolean)
+    if (!steps.length) {
+      wx.showToast({ title: '先写下至少一个操作步骤', icon: 'none' })
+      return
+    }
+    const existingIngredients = this.data.ingredients.map((ingredient) => ({
+      name: ingredient.name.trim(),
+      amount: null,
+      unit: '',
+    }))
+    const fingerprint = draftFingerprint(steps, this.data.ingredients)
+    this.setData({
+      aiExtracting: true,
+      aiReviewVisible: false,
+      aiReviewEmpty: false,
+      aiReviewMessage: '',
+      aiReviewWarnings: [],
+    })
+    try {
+      const result = await recipeModule.extractIngredients({ steps, existingIngredients })
+      const currentFingerprint = draftFingerprint(
+        this.data.steps.map((step) => step.text.trim()).filter(Boolean),
+        this.data.ingredients,
+      )
+      if (currentFingerprint !== fingerprint) {
+        this.setData({
+          aiExtracting: false,
+          aiReviewMessage: '内容已经变过了，请重新整理',
+        })
+        return
+      }
+      const review = buildAiReview(result)
+      const hasReview = Boolean(review.add.length || review.remove.length)
+      this.setData({
+        aiExtracting: false,
+        aiReviewVisible: hasReview,
+        aiReviewEmpty: !hasReview,
+        aiReviewMessage: hasReview
+          ? ''
+          : result.detected.length
+            ? '步骤里的食材和当前清单一致'
+            : '没有找到明确的食材，原有清单没有改变',
+        aiReviewWarnings: result.warnings,
+        aiReviewAdd: review.add,
+        aiReviewRemove: review.remove,
+        aiReviewFingerprint: fingerprint,
+      })
+    } catch (error) {
+      this.setData({
+        aiExtracting: false,
+        aiReviewVisible: false,
+        aiReviewEmpty: false,
+        aiReviewMessage: error instanceof Error ? error.message : '暂时没整理出来，原有食材没有改变',
+      })
+    }
+  },
+
+  toggleAiSuggestion(event: RowEvent) {
+    const group = event.currentTarget.dataset.group
+    const index = Number(event.currentTarget.dataset.index)
+    if (group === 'add') {
+      const list = [...this.data.aiReviewAdd]
+      if (list[index]) list[index] = { ...list[index], selected: !list[index].selected }
+      this.setData({ aiReviewAdd: list })
+      return
+    }
+    if (group === 'remove') {
+      const list = [...this.data.aiReviewRemove]
+      if (list[index]) list[index] = { ...list[index], selected: !list[index].selected }
+      this.setData({ aiReviewRemove: list })
+    }
+  },
+
+  discardAiReview() {
+    this.setData({
+      aiReviewVisible: false,
+      aiReviewEmpty: false,
+      aiReviewMessage: '',
+      aiReviewWarnings: [],
+      aiReviewAdd: [],
+      aiReviewRemove: [],
+      aiReviewFingerprint: '',
+    })
+  },
+
+  applyAiReview() {
+    const currentFingerprint = draftFingerprint(
+      this.data.steps.map((step) => step.text.trim()).filter(Boolean),
+      this.data.ingredients,
+    )
+    if (currentFingerprint !== this.data.aiReviewFingerprint) {
+      this.setData({
+        aiReviewVisible: false,
+        aiReviewMessage: '内容已经变过了，请重新整理',
+      })
+      return
+    }
+
+    const removeNames = new Set(
+      this.data.aiReviewRemove
+        .filter((suggestion) => suggestion.selected)
+        .map((suggestion) => normalizeIngredientName(suggestion.name)),
+    )
+    const ingredients = this.data.ingredients
+      .filter((ingredient) => !removeNames.has(normalizeIngredientName(ingredient.name)))
+      .map((ingredient) => ({ ...ingredient }))
+
+    for (const suggestion of this.data.aiReviewAdd) {
+      if (!suggestion.selected) continue
+      const exists = ingredients.some((ingredient) =>
+        normalizeIngredientName(ingredient.name) === normalizeIngredientName(suggestion.name))
+      if (exists) continue
+      ingredients.push({
+        id: `ingredient-${Date.now()}-${ingredients.length}`,
+        name: suggestion.name,
+        usedUp: true,
+      })
+    }
+
+    const ingredientOptions = Array.from(new Set([
+      ...this.data.ingredientOptions,
+      ...ingredients.map((ingredient) => ingredient.name),
+    ])).sort((left, right) => left.localeCompare(right, 'zh-CN'))
+    this.refreshIngredientPicker(ingredients, '', ingredientOptions)
+    this.discardAiReview()
+    wx.showToast({ title: '已应用选中建议', icon: 'success' })
   },
 
   onStepInput(event: FormEvent) {

@@ -14,4 +14,6 @@
 
 环境 ID 也可记录在根目录 `.env`（模板见 `.env.example`）供发布脚本读取，但小程序运行时仍需将非敏感配置编译进 `environments.ts`。AppSecret、服务账号凭据和数据库管理密钥不进入小程序配置。
 
+`recipe` 云函数的 AI 食材整理通过 OpenAI 兼容接口调用,需要在 CloudBase 服务端配置 `AI_API_KEY`、`AI_BASE_URL` 和 `AI_MODEL`。`AI_BASE_URL` 必须使用 HTTPS,例如腾讯混元的 `https://api.hunyuan.cloud.tencent.com/v1`;请求会访问 `${AI_BASE_URL}/chat/completions` 并使用 Bearer API Key 认证。服务商必须支持 `messages`、`tools`、`tool_choice` 和 OpenAI 风格的 `tool_calls`。这些值只进入云函数环境变量,不进入小程序包或 Git。未配置时,页面保留手动编辑并提示 AI 暂不可用。
+
 索引清单是版本化的声明文件。实际控制台或 CLI 创建结果必须与其名称、唯一性、字段顺序一致。
