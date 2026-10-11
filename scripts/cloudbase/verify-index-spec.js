@@ -17,6 +17,9 @@ const requiredCollections = [
   'preferences',
   'idempotency_records',
   'operation_logs',
+  'fridge_batches',
+  'fridge_records',
+  'fridge_cooks',
 ]
 
 if (spec.version !== 1) throw new Error('索引清单 version 必须为 1')

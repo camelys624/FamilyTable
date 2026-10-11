@@ -22,7 +22,7 @@ function batch(id, extra = {}) {
   }
 }
 
-function drive(overrides = {}, session = { onboarded: true }) {
+function drive(overrides = {}, session = { onboarded: true }, currentTime) {
   let options
   let requestSequence = 0
   const redirects = []
@@ -49,6 +49,7 @@ function drive(overrides = {}, session = { onboarded: true }) {
       return dependencies[name]
     },
     Page: (page) => { options = page },
+    Date: currentTime ? class extends Date { static now() { return Date.parse(currentTime) } } : Date,
     wx: { reLaunch: ({ url }) => redirects.push(url), stopPullDownRefresh() {} },
   })
   const page = Object.create(options)
@@ -108,7 +109,11 @@ test('failed create keeps input, no success or stock mutation, and retries the s
 test('old AI completion cannot restore suggestions after a successful stock write', async () => {
   const pending = deferred()
   const started = deferred()
-  const { page } = drive({ suggest: () => { started.resolve(); return pending.promise } })
+  const { page } = drive({
+    listBatches: async () => [batch('fresh')],
+    suggest: () => { started.resolve(); return pending.promise },
+  })
+  await page.loadBatches()
   const suggestionRequest = page.suggest()
   await started.promise
   page.openAdd()
@@ -240,4 +245,62 @@ test('stock and records fail independently and unonboarded sessions never write'
   assert.equal(guarded.data.formName, '鸡蛋')
   assert.equal(guarded.data.editorVisible, true)
   assert.deepEqual(redirects, ['/pages/onboarding/index'])
+})
+
+test('expiry filters use the Shanghai date and retain server availability decisions', async () => {
+  const { page } = drive({ listBatches: async () => [
+    batch('today', { expiresOn: '2026-10-12' }),
+    batch('near', { expiresOn: '2026-10-15' }),
+    batch('later', { expiresOn: '2026-10-16' }),
+    batch('unknown'),
+    batch('expired', { expiresOn: '2026-10-11', expired: true, usable: false }),
+    batch('spoiled', { expiresOn: '2026-10-13', usable: false }),
+    batch('closed', { remaining: false, usable: false }),
+  ] }, { onboarded: true }, '2026-10-11T16:30:00Z')
+  await page.loadBatches()
+  assert.equal(page.data.nearExpiryCount, 2)
+  assert.equal(page.data.availableCount, 4)
+  page.changeInventoryFilter({ currentTarget: { dataset: { filter: 'near' } } })
+  assert.deepEqual(plain(page.data.filteredBatches.map((item) => item.id)), ['today', 'near'])
+  page.changeInventoryFilter({ currentTarget: { dataset: { filter: 'available' } } })
+  assert.deepEqual(plain(page.data.filteredBatches.map((item) => item.id)), ['today', 'near', 'later', 'unknown'])
+  page.changeInventoryFilter({ currentTarget: { dataset: { filter: 'all' } } })
+  assert.equal(page.data.filteredBatches.length, 6)
+  assert.equal(page.data.filteredBatches.find((item) => item.id === 'expired').badgeLabel, '已过期')
+  assert.equal(page.data.filteredBatches.find((item) => item.id === 'spoiled').badgeLabel, '不可用')
+  assert.equal(page.data.filteredBatches.find((item) => item.id === 'unknown').nearExpiry, false)
+})
+
+test('refresh keeps the selected filter and edits the correct batch from a filtered row', async () => {
+  let rows = [batch('near', { name: '番茄', expiresOn: '2026-10-13', version: 4 }), batch('later', { expiresOn: '2026-10-21' })]
+  const { page } = drive({ listBatches: async () => rows }, { onboarded: true }, '2026-10-11T04:00:00Z')
+  await page.loadBatches()
+  page.changeInventoryFilter({ currentTarget: { dataset: { filter: 'near' } } })
+  page.openEdit(target('near'))
+  assert.equal(page.data.editingId, 'near')
+  assert.equal(page.data.editingVersion, 4)
+  page.discardEditingBatch()
+  assert.equal(page.data.discardId, 'near')
+  assert.equal(page.data.discardVersion, 4)
+  page.closeSheet()
+  assert.equal(page.data.editorVisible, false)
+  assert.equal(page.data.discardId, '')
+  rows = [batch('later', { expiresOn: '2026-10-21' })]
+  await page.loadBatches()
+  assert.equal(page.data.inventoryFilter, 'near')
+  assert.deepEqual(plain(page.data.filteredBatches), [])
+})
+
+test('empty or unavailable inventory does not request AI suggestions', async () => {
+  let calls = 0
+  const { page } = drive({ suggest: async () => { calls++; return [] } })
+  await page.onShow()
+  await page.suggest()
+  page.renderInventory([batch('expired', { usable: false, expired: true })])
+  await page.suggest()
+  assert.equal(calls, 0)
+  page.renderInventory([batch('usable')])
+  page.data.loadError = '库存读取失败'
+  await page.suggest()
+  assert.equal(calls, 0)
 })

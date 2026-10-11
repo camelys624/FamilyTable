@@ -116,10 +116,6 @@ Page({
     wx.switchTab({ url: '/pages/menu/index' })
   },
 
-  openFridge() {
-    wx.navigateTo({ url: '/pages/fridge/index' })
-  },
-
   openVote() {
     wx.navigateTo({ url: '/pages/vote/index' })
   },
@@ -127,6 +123,6 @@ Page({
   openShopping() {
     const state = getState()
     if (!state.shoppingItems.length) generateShoppingList()
-    wx.switchTab({ url: '/pages/shopping/index' })
+    wx.navigateTo({ url: '/pages/shopping/index' })
   },
 })

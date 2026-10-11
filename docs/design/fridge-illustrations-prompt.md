@@ -1,0 +1,9 @@
+# 冰箱页面插画
+
+生成方式：内置 image_gen；参考 `fridge-ui-redesign-v1.png`。
+
+运行时素材：`miniprogram/assets/fridge/illustrations-v1.webp`。仅做无损格式转换；与生成 PNG 的 RGBA 像素逐项核对一致。3 列 × 2 行图集由小程序 image 组件裁切显示，不使用本地 WXSS 背景图。
+
+## 生成提示词
+
+Create ONE production-ready transparent watercolor illustration sprite sheet for the Chinese FamilyTable refrigerator mini program, matching the small hand-drawn kitchen illustrations in the reference UI design. The reference image is style guidance only: do not draw any phones, UI, text, typography, cards, labels, numbers or backgrounds. The sheet must have EXACTLY SIX separate illustrations in a precise 3-column by 2-row grid of equal square cells, canvas aspect ratio 3:2. Leave generous fully transparent padding around every illustration, all art contained in the central 75% of its own square; no overlap across cells. Positions are invariant: top-left a small cream vintage refrigerator with its door open, visibly containing tomatoes, eggs and leafy greens, a tiny potted plant beside it; top-middle the same cream refrigerator open and completely empty, with a tiny potted plant; top-right a small black-green frying pan holding leafy vegetables and tomatoes with a few leaves hovering directly over the pan; bottom-left a cluster of three ripe tomatoes and a green calyx; bottom-middle three fresh eggs, one slightly cracked with no spill; bottom-right a bunch of fresh leafy Chinese greens. Refined watercolor wash, thin graphite-like hand-drawn outlines, restrained warm cream / forest green / tomato red / muted yellow palette, delicate small ground strokes only inside each cell, clean transparent background with real alpha. No checkerboard, no filled paper background, no shadows that extend to adjacent cells. Beautiful, calm, homely kitchen illustrations readable at small UI sizes.

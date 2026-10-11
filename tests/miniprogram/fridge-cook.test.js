@@ -50,7 +50,14 @@ function drive(t, config = {}) {
     },
   } })
   stub(paths[2], { createRequestId: () => `cook-request-${++sequence}` })
-  global.wx = { navigateBack: () => state.navigations.push('back'), navigateTo: ({ url }) => state.navigations.push(url) }
+  const tabPages = require(path.join(MINIPROGRAM, 'app.json')).tabBar.list.map((tab) => `/${tab.pagePath}`)
+  global.wx = {
+    navigateBack: () => state.navigations.push('back'),
+    switchTab: ({ url }) => {
+      assert.ok(tabPages.includes(url), `switchTab target must be a tab page: ${url}`)
+      state.navigations.push(url)
+    },
+  }
   let definition
   global.Page = (options) => { definition = options }
   delete require.cache[paths[3]]

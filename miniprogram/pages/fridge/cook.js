@@ -200,6 +200,6 @@ Page({
     },
     openFridge() {
         if (!this.data.submitting)
-            wx.navigateTo({ url: '/pages/fridge/index' });
+            wx.switchTab({ url: '/pages/fridge/index' });
     },
 });

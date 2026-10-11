@@ -44,10 +44,10 @@
         "selectedIconPath": "assets/tabbar/recipes-active.png"
       },
       {
-        "pagePath": "pages/shopping/index",
-        "text": "购物",
-        "iconPath": "assets/tabbar/shopping-default.png",
-        "selectedIconPath": "assets/tabbar/shopping-active.png"
+        "pagePath": "pages/fridge/index",
+        "text": "冰箱",
+        "iconPath": "assets/tabbar/fridge-default.png",
+        "selectedIconPath": "assets/tabbar/fridge-active.png"
       },
       {
         "pagePath": "pages/profile/index",

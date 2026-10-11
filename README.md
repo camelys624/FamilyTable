@@ -12,7 +12,7 @@
 当前仓库处于本地演示与 CloudBase 迁移并行阶段：
 
 - 小程序页面已包含登录引导、首页、周菜单、菜谱库、投票、购物和个人中心等页面。
-- `auth`、`family`、`recipe`、`menu` 四个 CloudBase 云函数已经纳入仓库。
+- `auth`、`family`、`recipe`、`menu`、`fridge` 五个 CloudBase 云函数已经纳入仓库。
 - `session`、`recipe`、`menu` 模块同时提供 local/cloud 适配器，运行时根据 `repositoryMode` 选择数据路径。
 - 当前 `miniprogram/config/environments.ts` 的 `activeStage` 为 `test`，对应 cloud 模式；发布前必须重新确认目标环境。
 - 投票、购物清单、饮食偏好等页面和后端契约属于产品范围，但对应的完整云端函数仍在逐步迁移中。
@@ -28,6 +28,7 @@
 - 周菜单查询、添加菜品和移除菜品
 - 投票页面
 - 购物清单页面
+- 冰箱库存、保质期、报损记录和做菜消耗确认
 - 个人资料和饮食偏好页面
 
 ### 后端能力
@@ -40,6 +41,7 @@
 | `family` | `family.current`、`family.create` |
 | `recipe` | `recipe.list`、`recipe.detail`、`recipe.create`、`recipe.update`、`recipe.delete` |
 | `menu` | `menu.week`、`menu.addRecipe`、`menu.removeRecipe` |
+| `fridge` | `fridge.listBatches`、`fridge.listRecords`、`fridge.createBatch`、`fridge.updateBatch`、`fridge.discardBatch`、`fridge.cook`、`fridge.suggest` |
 
 云函数采用 `index.js`、`handler.js`、`repository.js` 分层：入口负责 CloudBase 上下文，handler 负责协议、身份和参数校验，repository 负责数据库访问与事务。
 
@@ -69,9 +71,10 @@
 │   ├── auth/
 │   ├── family/
 │   ├── recipe/
-│   └── menu/
+│   ├── menu/
+│   └── fridge/
 ├── cloudbase/
-│   ├── indexes.json             # 11 个集合及索引的声明清单
+│   ├── indexes.json             # 14 个集合及索引的声明清单
 │   └── README.md                # CloudBase 初始化说明
 ├── scripts/cloudbase/           # 环境与索引校验脚本
 ├── tests/                       # 云函数 handler 与小程序导航测试
@@ -119,9 +122,9 @@ AI 食材整理通过 OpenAI 兼容接口调用。`recipe` 云函数需要配置
 
 1. 使用正式 AppID 打开项目并确认微信基础库支持 CloudBase。
 2. 创建相互隔离的 `dev`、`test`、`prod` CloudBase 环境。
-3. 根据 `cloudbase/indexes.json` 创建 11 个集合和索引，集合权限设置为客户端不可直接读写。
+3. 根据 `cloudbase/indexes.json` 创建 14 个集合和索引，集合权限设置为客户端不可直接读写。已有环境新增 `fridge_batches`、`fridge_records`、`fridge_cooks` 三个集合及其索引。
 4. 在 `miniprogram/config/environments.ts` 填写目标环境 ID，并切换 `activeStage`。
-5. 在微信开发者工具中按 `auth`、`family`、`recipe`、`menu` 顺序上传并部署云函数，并选择云端安装依赖。
+5. 在微信开发者工具中按 `auth`、`family`、`recipe`、`menu`、`fridge` 顺序上传并部署云函数，并选择云端安装依赖。冰箱的 AI 建议使用独立的 `FRIDGE_AI_MODEL` 配置；未配置时库存和做菜记录仍可使用。
 6. 在 `dev` 或 `test` 环境验证登录、创建家庭、菜谱操作、周菜单操作、重复 `requestId` 和版本冲突行为。
 
 更完整的初始化顺序见 [`cloudbase/README.md`](cloudbase/README.md)。

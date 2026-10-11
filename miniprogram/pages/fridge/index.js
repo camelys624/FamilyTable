@@ -5,6 +5,45 @@ const index_2 = require("../../modules/session/index");
 const app_error_1 = require("../../utils/app-error");
 const request_id_1 = require("../../utils/request-id");
 const DISCARD_REASONS = ['expired', 'spoiled', 'other'];
+const INVENTORY_FILTERS = ['all', 'near', 'available'];
+function batchArt(name) {
+    if (/番茄|西红柿/.test(name))
+        return { art: 'tomato', foodEmoji: '' };
+    if (/鸡蛋|鸭蛋|鹌鹑蛋/.test(name))
+        return { art: 'eggs', foodEmoji: '' };
+    if (/青菜|白菜|菜心|菠菜|生菜|油麦菜|小葱/.test(name))
+        return { art: 'greens', foodEmoji: '' };
+    if (/牛奶|酸奶/.test(name))
+        return { art: '', foodEmoji: '🥛' };
+    if (/猪肉|牛肉|鸡肉|排骨/.test(name))
+        return { art: '', foodEmoji: '🥩' };
+    if (/鱼|虾|蟹/.test(name))
+        return { art: '', foodEmoji: '🐟' };
+    if (/胡萝卜/.test(name))
+        return { art: '', foodEmoji: '🥕' };
+    if (/苹果|橙|柠檬|梨|水果/.test(name))
+        return { art: '', foodEmoji: '🍎' };
+    return { art: '', foodEmoji: '🥬' };
+}
+function inventoryViews(batches) {
+    // 临期只是提醒；过期、变质和是否可用仍以服务端返回为准。
+    const today = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const todayTime = Date.parse(`${today}T00:00:00Z`);
+    return batches.map((batch) => {
+        const expiryTime = Date.parse(`${batch.expiresOn}T00:00:00Z`);
+        const daysLeft = (expiryTime - todayTime) / (24 * 60 * 60 * 1000);
+        const nearExpiry = batch.usable && !batch.expired && daysLeft >= 0 && daysLeft <= 3;
+        const expiryParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(batch.expiresOn);
+        return {
+            ...batch,
+            ...batchArt(batch.name),
+            nearExpiry,
+            badgeLabel: batch.expired ? '已过期' : !batch.usable ? '不可用' : nearExpiry ? '临期' : '有剩',
+            badgeTone: batch.expired || !batch.usable ? 'unavailable' : nearExpiry ? 'near' : 'available',
+            expiryText: expiryParts ? `${Number(expiryParts[2])}月${Number(expiryParts[3])}日到期` : '未填写保质期',
+        };
+    });
+}
 async function hasFamily() {
     const session = await (0, index_2.ensureSession)();
     if (session.onboarded)
@@ -15,6 +54,9 @@ async function hasFamily() {
 Page({
     data: {
         batches: [],
+        filteredBatches: [],
+        inventoryFilter: 'all',
+        nearExpiryCount: 0,
         availableCount: 0,
         loading: false,
         loadError: '',
@@ -74,10 +116,7 @@ Page({
             if (sequence !== this.stockLoadSequence)
                 return;
             const batches = allBatches.filter((batch) => batch.remaining);
-            this.setData({
-                batches,
-                availableCount: batches.filter((batch) => batch.usable).length,
-            });
+            this.renderInventory(batches);
         }
         catch (error) {
             if (sequence === this.stockLoadSequence) {
@@ -91,6 +130,33 @@ Page({
     },
     async loadRecords() {
         await this.fetchRecords(false);
+    },
+    renderInventory(batches) {
+        const views = inventoryViews(batches);
+        const filter = this.data.inventoryFilter;
+        const filteredBatches = views.filter((batch) => filter === 'all'
+            || (filter === 'near' ? batch.nearExpiry : batch.usable));
+        filteredBatches.sort((left, right) => Number(right.nearExpiry) - Number(left.nearExpiry)
+            || (left.expiresOn || '9999-12-31').localeCompare(right.expiresOn || '9999-12-31'));
+        this.setData({
+            batches,
+            filteredBatches,
+            availableCount: batches.filter((batch) => batch.usable).length,
+            nearExpiryCount: views.filter((batch) => batch.nearExpiry).length,
+        });
+    },
+    changeInventoryFilter(event) {
+        const filter = event.currentTarget.dataset.filter;
+        if (!INVENTORY_FILTERS.includes(filter))
+            return;
+        this.setData({ inventoryFilter: filter });
+        this.renderInventory(this.data.batches);
+    },
+    closeSheet() {
+        if (this.data.discardId)
+            this.closeDiscard();
+        else
+            this.closeEditor();
     },
     async moreRecords() {
         if (this.data.recordsLoading || !this.data.recordsHasMore)
@@ -133,7 +199,7 @@ Page({
         this.setData({ suggestions: [], aiLoading: false, aiLoaded: false, aiError: '' });
     },
     async suggest() {
-        if (this.data.aiLoading || this.data.saving || this.data.loading)
+        if (this.data.aiLoading || this.data.saving || this.data.loading || this.data.loadError || !this.data.availableCount)
             return;
         const sequence = ++this.aiSequence;
         this.setData({ aiLoading: true, aiLoaded: false, aiError: '', suggestions: [] });
@@ -258,6 +324,10 @@ Page({
             discardName: batch.name, discardReasonIndex: batch.expired ? 0 : 2,
             discardUsedUp: true, saveError: '',
         });
+    },
+    discardEditingBatch() {
+        if (this.data.editingId)
+            this.discardBatch({ currentTarget: { dataset: { id: this.data.editingId } } });
     },
     closeDiscard() {
         if (this.data.saving)

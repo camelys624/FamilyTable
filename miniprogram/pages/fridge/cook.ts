@@ -216,6 +216,6 @@ Page({
   },
 
   openFridge() {
-    if (!this.data.submitting) wx.navigateTo({ url: '/pages/fridge/index' })
+    if (!this.data.submitting) wx.switchTab({ url: '/pages/fridge/index' })
   },
 })

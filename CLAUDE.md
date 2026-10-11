@@ -76,7 +76,7 @@ Only non-sensitive config belongs here — AppSecret, service-account credential
 
 ### Cloud function shape
 
-One function per domain, routed internally by `action`. Seven are planned (`auth family recipe menu vote shopping preference`); `auth` and `family` exist. Three files each, and the split is load-bearing:
+One function per domain, routed internally by `action`. Eight are planned (`auth family recipe menu vote shopping preference fridge`); `auth`, `family`, `recipe`, `menu` and `fridge` exist. `fridge` additionally has `suggestion.js` (CloudBase AI call, model chosen by the `FRIDGE_AI_MODEL` function env var; unset → `FEATURE_UNAVAILABLE`, never a fake result). Three files each, and the split is load-bearing:
 
 - `index.js` — thin adapter: `cloud.init`, identity from `cloud.getWXContext().OPENID`, delegate. The only entry-level `wx-server-sdk` contact.
 - `handler.js` — pure factory `createXHandler(repository, logger)` returning `(event, identity)`. Identity check → action routing → payload whitelist/validation → repository call → uniform response. Fully testable against a fake repository, which is what `tests/` does.
@@ -99,7 +99,7 @@ Docs §8.5 lists the other operations that must be transactional, and §8.3/§8.
 
 ### Database
 
-`cloudbase/indexes.json` is the versioned declaration of all 11 collections and their indexes and is the source of truth — anything created in the console or via CLI must match its names, uniqueness flags and field order. Collections are configured client-unreadable/unwritable; only cloud functions touch them. Field-level schemas live in docs §5.
+`cloudbase/indexes.json` is the versioned declaration of all 14 collections and their indexes and is the source of truth — anything created in the console or via CLI must match its names, uniqueness flags and field order. Collections are configured client-unreadable/unwritable; only cloud functions touch them. Field-level schemas live in docs §5.
 
 ## Conventions
 

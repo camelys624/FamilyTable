@@ -108,9 +108,6 @@ Page({
     openWeekMenu() {
         wx.switchTab({ url: '/pages/menu/index' });
     },
-    openFridge() {
-        wx.navigateTo({ url: '/pages/fridge/index' });
-    },
     openVote() {
         wx.navigateTo({ url: '/pages/vote/index' });
     },
@@ -118,6 +115,6 @@ Page({
         const state = (0, store_1.getState)();
         if (!state.shoppingItems.length)
             (0, store_1.generateShoppingList)();
-        wx.switchTab({ url: '/pages/shopping/index' });
+        wx.navigateTo({ url: '/pages/shopping/index' });
     },
 });
