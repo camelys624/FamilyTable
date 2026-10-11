@@ -52,6 +52,7 @@
           <view class="ticket-remove" data-id="{{dish.id}}" bindtap="removeRecipe">×</view>
           <text class="ticket-name">{{dish.recipe.name}}</text>
           <text class="ticket-meta">{{dish.recipe.duration}} 分钟</text>
+          <button class="cook-action" data-id="{{dish.id}}" data-meal="{{item.key}}" bindtap="openCook">做完了 · 记食材</button>
         </view>
         <view class="empty-meal" wx:if="{{!item.items.length}}">这一餐还空着</view>
         <view class="add-dish" data-meal="{{item.key}}" bindtap="openPicker">

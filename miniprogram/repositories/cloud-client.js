@@ -8,8 +8,7 @@ class CloudClient {
     constructor(transport) {
         this.transport = transport;
     }
-    async call(functionName, action, payload = {}) {
-        const requestId = (0, request_id_1.createRequestId)();
+    async call(functionName, action, payload = {}, requestId = (0, request_id_1.createRequestId)()) {
         try {
             const response = await this.transport.callFunction({
                 name: functionName,

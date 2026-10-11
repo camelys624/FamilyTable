@@ -1,0 +1,20 @@
+.fridge-page > .subtle { display: block; margin-top: 16rpx; }
+.toolbar, .batch-heading, .section-heading, .batch-actions { display: flex; align-items: center; gap: 18rpx; }
+.toolbar { margin-top: 24rpx; }
+.toolbar button { flex: 1; font-size: 25rpx; }
+.section-heading { justify-content: space-between; margin: 38rpx 0 20rpx; }
+.editor, .batch-card, .suggestion-card, .record-card, .empty-card { padding: 26rpx; margin-bottom: 18rpx; }
+.batch-heading { justify-content: space-between; margin-bottom: 14rpx; }
+.batch-name { font-weight: 750; font-size: 32rpx; overflow-wrap: anywhere; flex: 1; }
+.pill { flex-shrink: 0; }
+.expired { color: var(--chili); background: #fce9e2; }
+.field-label { display: block; margin: 22rpx 0 12rpx; }
+.date-field { display: flex; align-items: center; font-size: 24rpx; }
+.text-button { padding: 12rpx 16rpx; min-height: 68rpx; line-height: 44rpx; background: transparent; color: var(--leaf); font-size: 24rpx; }
+.batch-actions { margin-top: 16rpx; justify-content: flex-end; }
+.error-text { display: block; margin-top: 12rpx; color: var(--chili); line-height: 1.6; font-size: 24rpx; }
+.suggestion-line { display: block; margin-top: 16rpx; }
+.record-card > .subtle, .suggestion-card > .subtle { display: block; }
+.suggest-button { margin: 22rpx 0; }
+.safety-note { margin-top: 22rpx; }
+.empty-card { color: var(--muted); line-height: 1.7; }

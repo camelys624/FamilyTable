@@ -1,0 +1,13 @@
+.cook-page > .subtle { display: block; margin: 20rpx 0; }
+.ingredient-card, .result-card { padding: 26rpx; margin-top: 24rpx; }
+.ingredient-card > .subtle, .choice-label .subtle, .result-card > .subtle { display: block; margin-top: 12rpx; line-height: 1.6; }
+.choice-label { display: flex; align-items: center; gap: 16rpx; min-height: 88rpx; }
+.batch-choice { margin-top: 20rpx; padding-top: 12rpx; border-top: 2rpx solid var(--line); }
+.used-up-choice { padding-left: 40rpx; font-size: 25rpx; color: var(--leaf); }
+.toolbar { display: flex; gap: 18rpx; margin-top: 30rpx; }
+.toolbar .primary-button { flex: 2; font-size: 25rpx; }
+.toolbar .secondary-button { flex: 1; }
+.error-text { display: block; margin-top: 20rpx; color: var(--chili); line-height: 1.6; }
+.text-button { margin-top: 20rpx; background: transparent; color: var(--leaf); }
+.result-card button { margin-top: 22rpx; }
+.confirmation-notice { display: block; margin-top: 20rpx; padding: 20rpx; border-radius: 16rpx; background: var(--paper); color: var(--chili); line-height: 1.6; font-size: 25rpx; }

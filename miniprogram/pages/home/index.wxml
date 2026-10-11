@@ -22,6 +22,15 @@
       <view class="basket-body"></view>
     </view>
   </view>
+  <view class="shopping-card" bindtap="openFridge" role="button" aria-label="打开家庭冰箱">
+    <view class="bag-icon"><text>鲜</text></view>
+    <view class="shopping-copy">
+      <text class="shopping-title">家庭冰箱</text>
+      <text class="shopping-note">看看还有什么，先吃临期的</text>
+    </view>
+    <view class="shopping-link"><text>打开冰箱</text><text class="link-arrow">›</text></view>
+  </view>
+
 
   <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
     <text class="cloud-error-title">云端数据暂时不可用</text>
