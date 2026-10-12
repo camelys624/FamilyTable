@@ -68,6 +68,24 @@ function drive(t, config = {}) {
   return { page, state }
 }
 
+test('remaining buttons only update the chosen batch and respect the frozen confirmation', async (t) => {
+  const { page, state } = drive(t, { cook: async () => { throw new AppError('NETWORK_ERROR', '连接中断') } })
+  await page.onLoad(OPTIONS)
+  const choose = (id, value) => page.chooseRemaining({ currentTarget: { dataset: { id, value } } })
+  choose('later', 'remaining')
+  assert.equal(page.data.ingredients[0].batches[1].usedUp, true, 'unselected batches cannot be changed')
+  page.selectBatch(checkbox('later', ['selected']))
+  choose('later', 'remaining')
+  choose('early', 'invalid')
+  assert.deepEqual(page.data.ingredients[0].batches.map((entry) => entry.usedUp), [true, false])
+  await page.submit()
+  assert.deepEqual(state.calls[0].input.batches.map((entry) => [entry.batchId, entry.usedUp]), [['early', true], ['later', false]])
+  choose('early', 'remaining')
+  choose('later', 'usedUp')
+  await page.submit()
+  assert.deepEqual(state.calls[1], state.calls[0], 'uncertain receipt retry keeps the original choices and request ID')
+})
+
 test('failed submit preserves selected actual batches and usedUp, without displaying consumed', async (t) => {
   const { page, state } = drive(t, { cook: async () => { throw new AppError('NETWORK_ERROR', '连接中断') } })
   await page.onLoad(OPTIONS)

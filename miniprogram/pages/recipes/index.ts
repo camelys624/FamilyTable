@@ -10,10 +10,11 @@ Page({
     selectedCategory: '全部',
     categories: ['全部', '快手菜', '拿手菜', '素菜', '早餐', '家常菜'],
     loadError: '',
+    loading: true,
   },
 
   async onShow() {
-    this.setData({ loadError: '' })
+    this.setData({ loadError: '', loading: true })
     try {
       const recipes = await recipeModule.listRecipes()
       this.setData({ recipes, loadError: '' })
@@ -22,6 +23,8 @@ Page({
       const message = toAppError(error).message
       this.setData({ loadError: message, recipes: [], visibleRecipes: [] })
       wx.showToast({ title: message, icon: 'none' })
+    } finally {
+      this.setData({ loading: false })
     }
   },
 

@@ -150,3 +150,34 @@ button::after {
 .safe-bottom {
   padding-bottom: calc(28rpx + env(safe-area-inset-bottom));
 }
+
+/* Shared visual language for the redesigned pages. */
+.design-page { padding: 24rpx 28rpx 48rpx; }
+.design-page .paper-card { border: 0; background: #fffefb; border-radius: 30rpx; box-shadow: 0 6rpx 24rpx rgba(24,51,47,0.035); }
+.design-hero { position: relative; min-height: 186rpx; margin-bottom: 22rpx; }
+.design-copy { position: relative; z-index: 1; padding-top: 10rpx; padding-right: 150rpx; }
+.design-page .page-title { font-size: 56rpx; line-height: 1.2; overflow-wrap: anywhere; }
+.design-note { display: block; margin-top: 14rpx; font-size: 23rpx; line-height: 1.6; color: var(--muted); }
+.hero-illustration { width: 228rpx; height: 228rpx; }
+.hero-picture { position: absolute; right: -12rpx; top: -18rpx; pointer-events: none; }
+.dish-illustration { width: 132rpx; height: 132rpx; }
+.ingredient-illustration { width: 82rpx; height: 82rpx; }
+.small-illustration { width: 100rpx; height: 100rpx; }
+.empty-illustration { width: 230rpx; height: 230rpx; }
+.design-page .section-title { font-size: 32rpx; }
+.design-heading { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-bottom: 18rpx; }
+.design-link { display: inline-flex; align-items: center; justify-content: center; min-height: 64rpx; padding: 0 12rpx; flex: none; color: #347a5d; font-size: 23rpx; font-weight: 650; }
+.design-chevron { margin-left: 10rpx; font-size: 36rpx; color: var(--muted); }
+.design-badge { display: inline-flex; align-items: center; padding: 8rpx 16rpx; border-radius: 999rpx; color: var(--leaf); background: #eaf2e8; font-size: 21rpx; }
+.design-badge.amber { color: #9b691c; background: #fff0c9; }
+.design-empty { display: flex; flex-direction: column; align-items: center; padding: 26rpx 24rpx 36rpx; text-align: center; }
+.design-empty .section-title { margin: 8rpx 0 12rpx; }
+.design-empty button { margin-top: 24rpx; width: 330rpx; }
+.design-page .primary-button, .design-page .secondary-button { border-radius: 22rpx; font-size: 27rpx; }
+.design-footer { margin-top: 28rpx; padding: 24rpx; color: var(--muted); text-align: center; font-size: 23rpx; line-height: 1.6; }
+.design-page .input-shell { height: 82rpx; border-radius: 18rpx; padding: 0 22rpx; }
+.design-bottom-space { padding-bottom: calc(140rpx + env(safe-area-inset-bottom)); }
+.design-toolbar { position: sticky; bottom: 0; z-index: 5; margin: 28rpx -28rpx -48rpx; padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom)); background: rgba(255,254,251,0.97); border-top: 1rpx solid var(--line); }
+.design-toolbar button { width: 100%; }
+.design-page button[disabled] { opacity: 0.55; }
+.design-toolbar { background: #fffefb; }

@@ -2,7 +2,7 @@
 
 生成方式：内置 image_gen；参考 `fridge-ui-redesign-v1.png`。
 
-运行时素材：`miniprogram/assets/fridge/illustrations-v1.webp`。仅做无损格式转换；与生成 PNG 的 RGBA 像素逐项核对一致。3 列 × 2 行图集由小程序 image 组件裁切显示，不使用本地 WXSS 背景图。
+运行时素材：`miniprogram/assets/fridge/illustrations-v1.webp`。初版采用无损转换；其它页面重构时统一改用 WebP quality 90 编码以减小主包，像素尺寸和 alpha 通道保持一致。3 列 × 2 行图集由小程序 image 组件裁切显示，不使用本地 WXSS 背景图。
 
 ## 生成提示词
 

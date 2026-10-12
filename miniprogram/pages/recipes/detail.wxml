@@ -1,52 +1,12 @@
-<view class="detail-page safe-bottom" wx:if="{{recipe}}">
-  <view class="recipe-hero {{recipe.tone}} {{recipe.imagePath ? 'has-image' : ''}}">
-    <image wx:if="{{recipe.imagePath}}" class="hero-image" src="{{recipe.imagePath}}" mode="aspectFill" />
-    <block wx:else>
-      <view class="hero-rings"></view>
-      <text class="hero-initial">{{recipe.initial}}</text>
-    </block>
-    <view class="hero-stamp">{{recipe.duration}} 分钟</view>
-  </view>
-
+<view class="page-shell design-page" wx:if="{{loadError}}"><view class="cloud-error-card paper-card"><text class="cloud-error-title">这道菜暂时没加载出来</text><text class="cloud-error-message">{{loadError}}</text><button class="secondary-button cloud-error-retry" bindtap="onShow">重新加载</button></view></view>
+<view class="detail-page design-page" wx:elif="{{recipe}}">
+  <view class="recipe-hero"><image wx:if="{{recipe.imagePath}}" class="hero-image" src="{{recipe.imagePath}}" mode="aspectFill" /><kitchen-art wx:else name="{{recipe.name}}" art-size="detail-illustration" size="410" /></view>
   <view class="detail-sheet">
-    <text class="eyebrow">{{recipe.category}} · {{recipe.difficulty}}</text>
-    <view class="detail-title">{{recipe.name}}</view>
-    <text class="recipe-note">{{recipe.note}}</text>
-
-    <view class="section-heading">
-      <text class="section-title">备好这些食材</text>
-      <text class="ingredient-count">{{recipe.ingredients.length}} 样</text>
-    </view>
-
-    <view class="ingredient-list paper-card">
-      <view class="ingredient-row" wx:for="{{recipe.ingredients}}" wx:key="name">
-        <text class="ingredient-index">{{index + 1}}</text>
-        <text class="ingredient-name">{{item.name}}</text>
-        <text class="ingredient-usage {{item.usedUp ? 'used-up' : ''}}">{{item.usedUp ? '会用完 · 下次要买' : '有剩'}}</text>
-      </view>
-    </view>
-
-    <block wx:if="{{recipe.steps.length}}">
-      <view class="section-heading step-heading">
-        <text class="section-title">照着步骤来</text>
-        <text class="ingredient-count">{{recipe.steps.length}} 步</text>
-      </view>
-      <view class="instruction-list paper-card">
-        <view class="instruction-row" wx:for="{{recipe.steps}}" wx:key="*this">
-          <text class="instruction-index">{{index + 1}}</text>
-          <text class="instruction-text">{{item}}</text>
-        </view>
-      </view>
-    </block>
-
-    <view class="menu-note" wx:if="{{usageCount}}">
-      <view class="note-pin"></view>
-      <text>这道菜本周已安排 {{usageCount}} 次，会用完的食材已自动列进采购单。</text>
-    </view>
-
-    <view class="detail-actions">
-      <button class="secondary-button delete-button" bindtap="deleteRecipe">删除</button>
-      <button class="primary-button edit-button" bindtap="editRecipe">编辑菜谱</button>
-    </view>
+    <text class="eyebrow">{{recipe.category}} · {{recipe.difficulty}}</text><view class="page-title">{{recipe.name}}</view><text class="design-badge detail-time">{{recipe.duration}} 分钟</text><text class="design-note">{{recipe.note}}</text>
+    <view class="ingredient-list paper-card"><view class="design-heading"><text class="section-title">备好这些食材</text><text class="subtle">{{recipe.ingredients.length}} 样</text></view><view class="ingredient-row" wx:for="{{recipe.ingredients}}" wx:key="name"><kitchen-art name="{{item.name}}" art-size="ingredient-illustration" size="82" /><text class="ingredient-name">{{item.name}}</text><text class="design-badge {{item.usedUp ? 'amber' : ''}}">{{item.usedUp ? '会用完 · 下次要买' : '有剩'}}</text></view></view>
+    <view class="instruction-list paper-card" wx:if="{{recipe.steps.length}}"><view class="design-heading"><text class="section-title">照着步骤来</text><text class="subtle">{{recipe.steps.length}} 步</text></view><view class="instruction-row" wx:for="{{recipe.steps}}" wx:key="*this"><text class="instruction-index">{{index + 1}}</text><text class="instruction-text">{{item}}</text></view></view>
+    <view class="menu-note" wx:if="{{usageCount}}">这道菜本周已安排 {{usageCount}} 次，会用完的食材已自动列进采购单。</view>
   </view>
+  <view class="detail-actions design-toolbar"><button class="secondary-button delete-button" bindtap="deleteRecipe">删除</button><button class="primary-button edit-button" bindtap="editRecipe">编辑菜谱</button></view>
 </view>
+<view class="page-shell design-page" wx:else><view class="design-empty paper-card"><kitchen-art kind="book" art-size="empty-illustration" size="230" /><text class="subtle">正在翻开这道菜的做法…</text></view></view>

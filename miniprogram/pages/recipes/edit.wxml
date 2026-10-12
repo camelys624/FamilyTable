@@ -1,8 +1,9 @@
-<view class="page-shell edit-page safe-bottom">
-  <view class="edit-header">
+<view class="page-shell design-page edit-page">
+  <view class="edit-header design-hero"><view class="design-copy">
     <text class="eyebrow">一笔一画 · 记下家常味</text>
-    <view class="page-title">{{heading}}</view>
-    <text class="subtle edit-intro">家常做法不记用量：勾上做完会用完的食材，下次安排这道菜时就知道要买什么。</text>
+    <view class="page-title">{{isEditing ? '编辑菜谱' : '记一道新菜'}}</view>
+    <text class="subtle edit-intro">勾选会用完的食材，下次安排就知道买什么。</text>
+    </view><view class="hero-picture"><kitchen-art kind="book" art-size="hero-illustration" size="228" /></view>
   </view>
 
   <view class="edit-card paper-card">
@@ -61,6 +62,8 @@
       </view>
     </view>
 
+  </view>
+  <view class="edit-card paper-card">
     <view class="form-field">
       <view class="field-heading">
         <view>
@@ -82,8 +85,8 @@
           bindtap="toggleIngredientUsedUp"
         >
           <view class="used-up-check">{{item.usedUp ? '✓' : ''}}</view>
-          <text class="ingredient-name">{{item.name}}</text>
-          <text class="used-up-label">{{item.usedUp ? '会用完 · 下次要买' : '有剩 · 家里常备'}}</text>
+          <kitchen-art name="{{item.name}}" art-size="ingredient-illustration" size="82" /><text class="ingredient-name">{{item.name}}</text>
+          <text class="used-up-label">{{item.usedUp ? '用完' : '有剩'}}</text>
           <view class="row-remove" data-index="{{index}}" catchtap="removeIngredient">×</view>
         </view>
       </view>
@@ -181,6 +184,8 @@
       </view>
     </view>
 
+  </view>
+  <view class="edit-card paper-card">
     <view class="form-field step-field">
       <view class="field-heading">
         <view>
@@ -216,5 +221,5 @@
     </view>
   </view>
 
-  <button class="primary-button save-button" bindtap="saveRecipe">{{submitText}}</button>
+  <view class="design-toolbar"><button class="primary-button save-button" bindtap="saveRecipe">保存菜谱</button></view>
 </view>

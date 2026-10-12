@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const recipe_1 = require("../../modules/recipe/index");
+const index_1 = require("../../modules/recipe/index");
 const app_error_1 = require("../../utils/app-error");
 Page({
     data: {
@@ -10,11 +10,12 @@ Page({
         selectedCategory: '全部',
         categories: ['全部', '快手菜', '拿手菜', '素菜', '早餐', '家常菜'],
         loadError: '',
+        loading: true,
     },
     async onShow() {
-        this.setData({ loadError: '' });
+        this.setData({ loadError: '', loading: true });
         try {
-            const recipes = await recipe_1.recipeModule.listRecipes();
+            const recipes = await index_1.recipeModule.listRecipes();
             this.setData({ recipes, loadError: '' });
             this.filterRecipes(recipes, this.data.keyword, this.data.selectedCategory);
         }
@@ -22,6 +23,9 @@ Page({
             const message = (0, app_error_1.toAppError)(error).message;
             this.setData({ loadError: message, recipes: [], visibleRecipes: [] });
             wx.showToast({ title: message, icon: 'none' });
+        }
+        finally {
+            this.setData({ loading: false });
         }
     },
     async retryLoad() {

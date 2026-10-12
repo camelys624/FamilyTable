@@ -1,7 +1,10 @@
 {
   "navigationBarTitleText": "今天吃什么",
-  "navigationBarBackgroundColor": "#f2f8f4",
+  "navigationBarBackgroundColor": "#eaf2ea",
   "navigationBarTextStyle": "black",
   "enablePullDownRefresh": true,
-  "backgroundColor": "#f2f8f4"
+  "backgroundColor": "#eaf2ea",
+  "usingComponents": {
+    "kitchen-art": "/components/kitchen-art/index"
+  }
 }

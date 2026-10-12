@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "确认做菜消耗"
+  "navigationBarTitleText": "确认做菜消耗",
+  "usingComponents": {
+    "kitchen-art": "/components/kitchen-art/index"
+  }
 }

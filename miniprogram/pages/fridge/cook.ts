@@ -168,6 +168,12 @@ Page({
     this.updateChoice(event, 'usedUp', 'usedUp')
   },
 
+  chooseRemaining(event: { currentTarget: { dataset: { id?: unknown; value?: unknown } } }) {
+    const { id, value } = event.currentTarget.dataset
+    if (value !== 'usedUp' && value !== 'remaining') return
+    this.updateChoice({ currentTarget: { dataset: { id } }, detail: { value: value === 'usedUp' ? ['usedUp'] : [] } }, 'usedUp', 'usedUp')
+  },
+
   async submit() {
     if (this.data.loading || (this.data.loadError && !this.data.outcomeUncertain) || this.data.submitting || this.data.submitted || !this.data.canSubmit || !this._options) return
     const options: CookOptions = this._options

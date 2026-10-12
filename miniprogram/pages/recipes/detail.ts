@@ -8,6 +8,8 @@ Page({
     recipeId: '',
     recipe: null as Recipe | null,
     usageCount: 0,
+    loading: true,
+    loadError: '',
   },
 
   onLoad(options: { id?: string }) {
@@ -21,6 +23,7 @@ Page({
   async onShow() {
     const recipeId = this.data.recipeId
     if (!recipeId) return
+    this.setData({ loading: true, loadError: '' })
     try {
       const recipe = await recipeModule.getRecipe(recipeId)
       if (!recipe) {
@@ -37,7 +40,10 @@ Page({
       this.setData({ recipe, usageCount })
       wx.setNavigationBarTitle({ title: recipe.name })
     } catch (error) {
+      this.setData({ loadError: error instanceof Error ? error.message : '菜谱暂时加载失败，请重试' })
       wx.showToast({ title: error instanceof Error ? error.message : '菜谱暂时加载失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ loading: false })
     }
   },
 

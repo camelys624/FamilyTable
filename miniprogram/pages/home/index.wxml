@@ -1,118 +1,31 @@
-<view class="page-shell home-page">
-  <view class="hero">
-    <view class="hero-copy">
-      <view class="family-line">
-        <text class="family-leaf">◆</text>
-        <text>{{familyName}}</text>
-      </view>
-      <view class="welcome-title">{{userName}}，开饭啦 <text class="wave">👋</text></view>
-      <text class="today-text">{{todayText}}</text>
-    </view>
-
-    <view class="produce-art" aria-hidden="true">
-      <text class="floating-leaf leaf-one">●</text>
-      <text class="floating-leaf leaf-two">●</text>
-      <view class="vegetables">
-        <text class="vegetable greens">🥬</text>
-        <text class="vegetable corn">🌽</text>
-        <text class="vegetable carrot">🥕</text>
-        <text class="vegetable hero-tomato">🍅</text>
-      </view>
-      <view class="basket-rim"></view>
-      <view class="basket-body"></view>
-    </view>
+<view class="page-shell design-page home-page">
+  <view class="design-hero">
+    <view class="design-copy"><text class="eyebrow">{{familyName || '家的饭桌'}}</text><view class="page-title">{{userName || '家人'}}，开饭啦</view><text class="design-note">{{todayText}}</text></view>
+    <view class="hero-picture"><kitchen-art kind="basket" art-size="hero-illustration" size="228" /></view>
   </view>
-
-  <view class="cloud-error-card paper-card" wx:if="{{loadError}}">
-    <text class="cloud-error-title">云端数据暂时不可用</text>
-    <text class="cloud-error-message">{{loadError}}</text>
-    <text class="cloud-error-help">请先在微信开发者工具部署 recipe、menu 云函数并初始化数据库。</text>
-    <button class="secondary-button cloud-error-retry" bindtap="retryLoad">重新加载</button>
-  </view>
-
+  <view class="cloud-error-card paper-card" wx:if="{{loadError}}"><text class="cloud-error-title">今天的菜单暂时没加载出来</text><text class="cloud-error-message">{{loadError}}</text><button class="secondary-button cloud-error-retry" bindtap="retryLoad">重新加载</button></view>
+  <view class="design-empty paper-card" wx:elif="{{loading}}"><kitchen-art kind="menu" size="230" /><text class="subtle">正在准备今天的菜单…</text></view>
   <block wx:else>
-  <view class="recommend-card paper-card">
-    <view class="card-heading">
-      <text class="card-title">今日菜单推荐</text>
-      <text class="sparkles">✦</text>
+    <view class="today-card paper-card">
+      <view class="design-heading"><text class="section-title">今日菜单</text><view class="design-link" bindtap="openWeekMenu">查看周菜单 <text class="design-chevron">›</text></view></view>
+      <view class="meal-row" wx:for="{{todayDishes}}" wx:key="id" bindtap="openWeekMenu">
+        <text class="meal-label {{item.mealLabel === '荐' ? 'recommend-label' : ''}}">{{item.mealLabel === '早' ? '早餐' : item.mealLabel === '午' ? '午餐' : item.mealLabel === '晚' ? '晚餐' : '推荐'}}</text>
+        <view class="dish-preview"><image wx:if="{{item.imagePath}}" src="{{item.imagePath}}" class="dish-photo" mode="aspectFill" /><kitchen-art wx:else name="{{item.name}}" art-size="dish-illustration" size="132" /></view>
+        <view class="meal-copy"><text class="dish-name">{{item.name}}</text><text class="dish-meta">{{item.mealLabel === '荐' ? '为你推荐 · ' : ''}}{{item.duration}} 分钟</text></view><text class="design-chevron">›</text>
+      </view>
+      <view class="design-empty" wx:if="{{!todayDishes.length}}"><kitchen-art kind="menu" art-size="empty-illustration" size="230" /><text class="section-title">今天的餐桌还空着</text><text class="subtle">去周菜单安排一家人的三餐。</text><button class="secondary-button" bindtap="openWeekMenu">安排今天的菜单</button></view>
     </view>
-
-    <view class="orbit-table" bindtap="openWeekMenu">
-      <view class="orbit-line"></view>
-      <view class="table-center">
-        <view class="cloche-icon">
-          <view class="cloche-knob"></view>
-          <view class="cloche-dome"></view>
-          <view class="cloche-base"></view>
+    <view class="vote-card paper-card">
+      <view class="design-heading"><view><text class="section-title">今晚投一票</text><text class="design-note">一家人的胃口，一起商量。</text></view><kitchen-art kind="greensDish" art-size="small-illustration" size="100" /></view>
+      <view class="candidate-row" wx:if="{{pollCandidates.length}}">
+        <view wx:for="{{pollCandidates}}" wx:key="id" class="candidate-chip {{votedRecipeId === item.id ? 'picked' : ''}}" bindtap="openVote">
+          <view class="candidate-thumb"><image wx:if="{{item.imagePath}}" src="{{item.imagePath}}" class="dish-photo" mode="aspectFill" /><kitchen-art wx:else name="{{item.name}}" art-size="small-illustration" size="100" /></view>
+          <text class="candidate-name">{{item.name}}</text><text class="candidate-vote" wx:if="{{votedRecipeId === item.id}}">✓ 已投</text>
         </view>
-        <text class="center-small">今日</text>
-        <text class="center-title">菜单</text>
-        <text class="center-action">为你用心推荐</text>
       </view>
-
-      <view
-        wx:for="{{todayDishes}}"
-        wx:key="id"
-        class="meal-plate plate-slot-{{index}} {{item.tone}}"
-      >
-        <text class="meal-mark">{{item.mealLabel}}</text>
-        <view class="food-preview">
-          <text class="food-emoji">{{item.foodEmoji}}</text>
-        </view>
-        <text class="plate-name">{{item.name}}</text>
-        <text class="plate-meta">{{item.mealLabel === '荐' ? '为你推荐' : item.duration + ' 分钟'}}</text>
-      </view>
-
-      <text class="empty-menu" wx:if="{{!todayDishes.length}}">去周菜单安排今天吃什么</text>
+      <view class="empty-vote" wx:else>先记几道菜，再请全家投票。</view>
+      <view class="design-link" bindtap="openVote">看票数 <text class="design-chevron">›</text></view>
     </view>
-  </view>
-
-  <view class="vote-card paper-card">
-    <view class="vote-heading">
-      <view>
-        <view class="title-line">
-          <text class="card-title">今晚投一票</text>
-          <text class="vote-leaf">♣</text>
-        </view>
-        <text class="vote-note">三个人的胃口，交给一张票</text>
-      </view>
-      <view class="card-link" bindtap="openVote">
-        <text>查看票数</text>
-        <text class="link-arrow">›</text>
-      </view>
-    </view>
-
-    <view class="candidate-row" wx:if="{{pollCandidates.length}}">
-      <view
-        wx:for="{{pollCandidates}}"
-        wx:key="id"
-        class="candidate-chip {{item.tone}} {{votedRecipeId === item.id ? 'picked' : ''}}"
-        bindtap="openVote"
-      >
-        <text class="candidate-name">{{item.name}}</text>
-        <text class="candidate-vote" wx:if="{{votedRecipeId === item.id}}">已投</text>
-      </view>
-      <view class="more-chip" bindtap="openVote">
-        <text class="more-dots">•••</text>
-        <text>更多</text>
-      </view>
-    </view>
-    <view class="empty-vote" wx:else bindtap="openVote">先记几道菜，再请全家投票 <text>›</text></view>
-  </view>
-
-  <view class="shopping-card" bindtap="openShopping">
-    <view class="bag-icon">
-      <view class="bag-handle"></view>
-      <text>{{remainingShopping || '生'}}</text>
-    </view>
-    <view class="shopping-copy">
-      <text class="shopping-title">本周采购单</text>
-      <text class="shopping-note">{{shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text>
-    </view>
-    <view class="shopping-link">
-      <text>去看看</text>
-      <text class="link-arrow">›</text>
-    </view>
-  </view>
+    <view class="shopping-card paper-card" bindtap="openShopping"><kitchen-art kind="shopping" art-size="small-illustration" size="100" /><view class="shopping-copy"><text class="shopping-title">本周采购单</text><text class="shopping-note">{{shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text></view><view class="shopping-action">去看看 <text>›</text></view></view>
   </block>
 </view>

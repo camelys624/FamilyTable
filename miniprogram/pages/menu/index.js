@@ -60,6 +60,7 @@ Page({
                 weekStart: menu.weekStart,
                 repeatName: repeatedItem?.recipe.name || '',
                 repeatCount: repeated?.[1] || 0,
+                loadError: '',
             });
         }
         catch (error) {

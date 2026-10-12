@@ -1,13 +1,30 @@
-.cook-page > .subtle { display: block; margin: 20rpx 0; }
-.ingredient-card, .result-card { padding: 26rpx; margin-top: 24rpx; }
-.ingredient-card > .subtle, .choice-label .subtle, .result-card > .subtle { display: block; margin-top: 12rpx; line-height: 1.6; }
-.choice-label { display: flex; align-items: center; gap: 16rpx; min-height: 88rpx; }
-.batch-choice { margin-top: 20rpx; padding-top: 12rpx; border-top: 2rpx solid var(--line); }
-.used-up-choice { padding-left: 40rpx; font-size: 25rpx; color: var(--leaf); }
-.toolbar { display: flex; gap: 18rpx; margin-top: 30rpx; }
-.toolbar .primary-button { flex: 2; font-size: 25rpx; }
-.toolbar .secondary-button { flex: 1; }
-.error-text { display: block; margin-top: 20rpx; color: var(--chili); line-height: 1.6; }
-.text-button { margin-top: 20rpx; background: transparent; color: var(--leaf); }
-.result-card button { margin-top: 22rpx; }
-.confirmation-notice { display: block; margin-top: 20rpx; padding: 20rpx; border-radius: 16rpx; background: var(--paper); color: var(--chili); line-height: 1.6; font-size: 25rpx; }
+.cook-page .design-hero { min-height: 144rpx; margin-bottom: 6rpx; }
+.cook-page .design-copy { padding-right: 180rpx; }
+.cook-page .page-title { font-size: 52rpx; }
+.cook-intro { display: block; color: var(--muted); font-size: 24rpx; line-height: 1.7; margin-bottom: 24rpx; }
+.loading-note { padding: 20rpx 0; color: var(--muted); font-size: 24rpx; }
+.ingredient-card { padding: 18rpx 24rpx 24rpx; margin-bottom: 20rpx; }
+.ingredient-heading { display: flex; align-items: center; gap: 16rpx; }
+.batch-choice { margin-top: 12rpx; border: 1rpx solid var(--line); border-radius: 20rpx; padding: 12rpx 18rpx; }
+.batch-choice.selected { background: #fafbf5; border-color: #b6c9b9; }
+.choice-label { display: flex; align-items: center; gap: 14rpx; min-height: 88rpx; }
+.choice-label checkbox { flex: none; transform: scale(0.85); }
+.batch-copy { flex: 1; min-width: 0; }
+.batch-copy text { display: block; }
+.batch-date { font-size: 25rpx; font-weight: 650; margin-bottom: 5rpx; }
+.remaining-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12rpx; margin: 12rpx 0 2rpx; padding-top: 14rpx; border-top: 1rpx solid var(--line); }
+.remaining-label { color: var(--muted); font-size: 23rpx; }
+.remaining-options { flex: 1; display: flex; gap: 12rpx; min-width: 240rpx; }
+.remaining-option { flex: 1; display: flex; align-items: center; justify-content: center; height: 70rpx; border-radius: 18rpx; padding: 0 14rpx; background: #eaf0e4; color: var(--ink); font-size: 25rpx; border: 1rpx solid transparent; }
+.remaining-option.used-up { border-color: #c69942; background: #ffedbd; color: #976c1f; }
+.remaining-option.has-left { background: var(--ink); color: #fff; }
+.missing-batch { display: flex; flex-direction: column; gap: 8rpx; padding: 18rpx 22rpx; border-radius: 18rpx; background: #fff2cd; color: #987231; font-size: 23rpx; line-height: 1.6; }
+.confirmation-notice, .error-text { margin-bottom: 20rpx; padding: 20rpx 24rpx; border-radius: 20rpx; background: #fff2d3; color: #947236; font-size: 24rpx; line-height: 1.6; }
+.error-text { color: #a96048; background: #fbebe0; }
+.result-card { display: flex; flex-direction: column; align-items: center; padding: 24rpx; gap: 18rpx; text-align: center; }
+.result-row { font-size: 25rpx; line-height: 1.5; }
+.result-card button { width: 100%; margin-top: 14rpx; }
+.toolbar-links { display: flex; gap: 14rpx; margin-top: 14rpx; }
+.toolbar-links .secondary-button { flex: 1; }
+.fridge-button { flex: 1.4; display: flex; align-items: center; justify-content: center; height: 82rpx; border-radius: 22rpx; background: #e5efdf; color: var(--ink); font-size: 23rpx; padding: 0 14rpx; }
+.cook-page .design-hero { min-height: 212rpx; }

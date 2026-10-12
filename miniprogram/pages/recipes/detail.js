@@ -1,13 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const menu_1 = require("../../modules/menu/index");
-const recipe_1 = require("../../modules/recipe/index");
+const index_1 = require("../../modules/menu/index");
+const index_2 = require("../../modules/recipe/index");
 const date_1 = require("../../utils/date");
 Page({
     data: {
         recipeId: '',
         recipe: null,
         usageCount: 0,
+        loading: true,
+        loadError: '',
     },
     onLoad(options) {
         if (!options.id) {
@@ -20,14 +22,15 @@ Page({
         const recipeId = this.data.recipeId;
         if (!recipeId)
             return;
+        this.setData({ loading: true, loadError: '' });
         try {
-            const recipe = await recipe_1.recipeModule.getRecipe(recipeId);
+            const recipe = await index_2.recipeModule.getRecipe(recipeId);
             if (!recipe) {
                 wx.showToast({ title: '这道菜已经不在菜谱簿里了', icon: 'none' });
                 setTimeout(() => wx.navigateBack(), 450);
                 return;
             }
-            const menu = await menu_1.menuModule.getWeekMenu((0, date_1.getCurrentWeekKey)());
+            const menu = await index_1.menuModule.getWeekMenu((0, date_1.getCurrentWeekKey)());
             const usageCount = menu.days.reduce((total, day) => {
                 return total + ['breakfast', 'lunch', 'dinner'].reduce((dayTotal, mealType) => {
                     return dayTotal + day[mealType].filter((item) => item.recipeId === recipeId).length;
@@ -37,7 +40,11 @@ Page({
             wx.setNavigationBarTitle({ title: recipe.name });
         }
         catch (error) {
+            this.setData({ loadError: error instanceof Error ? error.message : '菜谱暂时加载失败，请重试' });
             wx.showToast({ title: error instanceof Error ? error.message : '菜谱暂时加载失败，请重试', icon: 'none' });
+        }
+        finally {
+            this.setData({ loading: false });
         }
     },
     editRecipe() {
@@ -61,7 +68,7 @@ Page({
                 if (!result.confirm)
                     return;
                 try {
-                    await recipe_1.recipeModule.deleteRecipe(recipe.id);
+                    await index_2.recipeModule.deleteRecipe(recipe.id);
                     wx.showToast({ title: '已从菜谱簿移除', icon: 'success' });
                     setTimeout(() => wx.navigateBack(), 450);
                 }

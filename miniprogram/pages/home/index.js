@@ -17,6 +17,7 @@ Page({
         remainingShopping: 0,
         shoppingStale: false,
         loadError: '',
+        loading: true,
     },
     async onShow() {
         await this.loadData();
@@ -26,15 +27,19 @@ Page({
         wx.stopPullDownRefresh();
     },
     async loadData() {
+        this.setData({ loading: true });
         const session = await (0, index_3.ensureSession)().catch((error) => {
             const message = (0, app_error_1.toAppError)(error).message;
             this.setData({ loadError: message });
             wx.showToast({ title: message, icon: 'none' });
             return null;
         });
-        if (!session)
+        if (!session) {
+            this.setData({ loading: false });
             return;
+        }
         if (!session.onboarded) {
+            this.setData({ loading: false });
             wx.reLaunch({ url: '/pages/onboarding/index' });
             return;
         }
@@ -47,8 +52,10 @@ Page({
             ]);
             const todayIndex = (new Date().getDay() || 7) - 1;
             const day = menu.days[todayIndex] || menu.days[0];
-            if (!day)
+            if (!day) {
+                this.setData({ loading: false });
                 return;
+            }
             const emojiByTone = {
                 tomato: '🍅',
                 berry: '🍖',
@@ -100,6 +107,9 @@ Page({
             const message = (0, app_error_1.toAppError)(error).message;
             this.setData({ loadError: message });
             wx.showToast({ title: message, icon: 'none' });
+        }
+        finally {
+            this.setData({ loading: false });
         }
     },
     async retryLoad() {

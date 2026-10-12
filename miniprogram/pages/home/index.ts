@@ -22,6 +22,7 @@ Page({
     remainingShopping: 0,
     shoppingStale: false,
     loadError: '',
+    loading: true,
   },
   async onShow() {
     await this.loadData()
@@ -33,14 +34,16 @@ Page({
   },
 
   async loadData() {
+    this.setData({ loading: true })
     const session = await ensureSession().catch((error: unknown) => {
       const message = toAppError(error).message
       this.setData({ loadError: message })
       wx.showToast({ title: message, icon: 'none' })
       return null
     })
-    if (!session) return
+    if (!session) { this.setData({ loading: false }); return }
     if (!session.onboarded) {
+      this.setData({ loading: false })
       wx.reLaunch({ url: '/pages/onboarding/index' })
       return
     }
@@ -53,7 +56,7 @@ Page({
       ])
       const todayIndex = (new Date().getDay() || 7) - 1
       const day = menu.days[todayIndex] || menu.days[0]
-      if (!day) return
+      if (!day) { this.setData({ loading: false }); return }
       const emojiByTone: Record<string, string> = {
         tomato: '🍅',
         berry: '🍖',
@@ -105,6 +108,8 @@ Page({
       const message = toAppError(error).message
       this.setData({ loadError: message })
       wx.showToast({ title: message, icon: 'none' })
+    } finally {
+      this.setData({ loading: false })
     }
   },
 
