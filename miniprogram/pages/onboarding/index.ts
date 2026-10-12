@@ -1,5 +1,6 @@
 import { completeOnboarding, ensureSession } from '../../modules/session/index'
 import { toAppError } from '../../utils/app-error'
+import { runtimeConfig } from '../../config/runtime'
 
 interface ChooseAvatarEvent {
   detail: { avatarUrl: string }
@@ -14,6 +15,8 @@ Page({
     avatarPath: '',
     avatarUrl: '',
     submitting: false,
+    isLocal: runtimeConfig.repositoryMode === 'local',
+    errorMessage: '',
   },
 
   async onLoad() {
@@ -31,22 +34,27 @@ Page({
   },
 
   setMode(event: any) {
-    this.setData({ mode: event.currentTarget.dataset.mode })
+    if (this.data.submitting) return
+    this.setData({ mode: event.currentTarget.dataset.mode, errorMessage: '' })
   },
 
   onFamilyName(event: any) {
+    if (this.data.submitting) return
     this.setData({ familyName: event.detail.value })
   },
 
   onUserName(event: any) {
+    if (this.data.submitting) return
     this.setData({ userName: event.detail.value })
   },
 
   onInviteCode(event: any) {
-    this.setData({ inviteCode: event.detail.value })
+    if (this.data.submitting) return
+    this.setData({ inviteCode: event.detail.value.trim().toUpperCase(), errorMessage: '' })
   },
 
   onChooseAvatar(event: ChooseAvatarEvent) {
+    if (this.data.submitting) return
     this.setData({ avatarPath: event.detail.avatarUrl, avatarUrl: '' })
   },
 
@@ -60,12 +68,13 @@ Page({
 
   async continue() {
     if (this.data.submitting) return
-    this.setData({ submitting: true })
+    this.setData({ submitting: true, errorMessage: '' })
     try {
       let avatarUrl = this.data.avatarUrl
-      if (this.data.avatarPath) {
+      if (this.data.avatarPath && !avatarUrl) {
         try {
           avatarUrl = await this.uploadAvatar(this.data.avatarPath)
+          this.setData({ avatarUrl })
         } catch (error) {
           wx.showToast({ title: '头像上传失败，可稍后再设置', icon: 'none' })
         }
@@ -80,6 +89,7 @@ Page({
       wx.switchTab({ url: '/pages/home/index' })
     } catch (error) {
       const appError = toAppError(error)
+      this.setData({ errorMessage: appError.message })
       wx.showToast({ title: appError.message, icon: 'none' })
     } finally {
       this.setData({ submitting: false })

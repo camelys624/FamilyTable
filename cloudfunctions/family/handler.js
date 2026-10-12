@@ -6,6 +6,9 @@ const SAFE_ERROR_CODES = new Set([
   'NOT_FAMILY_MEMBER',
   'FORBIDDEN',
   'VALIDATION_ERROR',
+  'INVITE_INVALID',
+  'INVITE_EXPIRED',
+  'FAMILY_FULL',
   'IDEMPOTENCY_CONFLICT',
   'REQUEST_IN_PROGRESS',
   'DATABASE_NOT_INITIALIZED',
@@ -67,6 +70,29 @@ function createFamilyHandler(repository, logger = console) {
       if (event.action === 'family.current') {
         assertPayloadFields(payload, [])
         const data = await repository.current(identity.openid)
+        return { ok: true, data, requestId }
+      }
+      if (['family.create', 'family.invite', 'family.join'].includes(event.action)) {
+        if (typeof event.requestId !== 'string' || event.requestId.trim().length < 8 || event.requestId.trim().length > 64) {
+          throw validationError('家庭操作需要 8～64 位 requestId', { field: 'requestId' })
+        }
+      }
+      if (event.action === 'family.invite') {
+        assertPayloadFields(payload, ['expiresInHours'])
+        const expiresInHours = payload.expiresInHours === undefined ? 72 : payload.expiresInHours
+        if (!Number.isInteger(expiresInHours) || expiresInHours < 1 || expiresInHours > 168) {
+          throw validationError('邀请码有效期需为 1～168 小时', { field: 'expiresInHours' })
+        }
+        const data = await repository.invite(identity.openid, { expiresInHours }, requestId)
+        return { ok: true, data, requestId }
+      }
+      if (event.action === 'family.join') {
+        assertPayloadFields(payload, ['inviteCode', 'displayName'])
+        const inviteCode = typeof payload.inviteCode === 'string' ? payload.inviteCode.trim().toUpperCase() : ''
+        const displayName = typeof payload.displayName === 'string' ? payload.displayName.trim() : ''
+        if (!/^[A-HJ-NP-Z2-9]{8}$/.test(inviteCode)) throw validationError('请填写 8 位家庭邀请码', { field: 'inviteCode' })
+        if (!displayName || displayName.length > 12) throw validationError('称呼需填写 1～12 个字', { field: 'displayName' })
+        const data = await repository.join(identity.openid, { inviteCode, displayName }, requestId)
         return { ok: true, data, requestId }
       }
       if (event.action === 'family.create') {

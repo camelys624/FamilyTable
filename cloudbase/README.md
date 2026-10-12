@@ -17,3 +17,5 @@
 `recipe` 云函数的 AI 食材整理通过 OpenAI 兼容接口调用,需要在 CloudBase 服务端配置 `AI_API_KEY`、`AI_BASE_URL` 和 `AI_MODEL`。`AI_BASE_URL` 必须使用 HTTPS,例如腾讯混元的 `https://api.hunyuan.cloud.tencent.com/v1`;请求会访问 `${AI_BASE_URL}/chat/completions` 并使用 Bearer API Key 认证。服务商必须支持 `messages`、`tools`、`tool_choice` 和 OpenAI 风格的 `tool_calls`。这些值只进入云函数环境变量,不进入小程序包或 Git。未配置时,页面保留手动编辑并提示 AI 暂不可用。
 
 索引清单是版本化的声明文件。实际控制台或 CLI 创建结果必须与其名称、唯一性、字段顺序一致。
+
+家庭邀请与加入已接通：需重新部署 `family` 云函数，并补充 `families.idx_families_invite_status` 索引。务必确认 `idempotency_records` 等集合禁止客户端直接读写，邀请成功回执包含邀请码，仅可通过管理员身份调用云函数重放。使用方式与验收见 [家庭邀请实现与验收](../docs/家庭邀请实现与验收.md)。

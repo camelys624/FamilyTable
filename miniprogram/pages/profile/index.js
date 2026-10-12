@@ -1,6 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const store_1 = require("../../services/store");
+const runtime_1 = require("../../config/runtime");
+const index_1 = require("../../modules/family/index");
+const index_2 = require("../../modules/session/index");
+const app_error_1 = require("../../utils/app-error");
+const request_id_1 = require("../../utils/request-id");
 Page({
     data: {
         familyName: '',
@@ -9,28 +14,63 @@ Page({
         spicyLevel: 1,
         spicyLabel: '微辣',
         avoidFood: '',
-        inviteCode: store_1.DEMO_INVITE_CODE,
+        inviteCode: '',
+        inviteExpiresAt: '',
+        inviteExpiryLabel: '',
+        invitationActive: false,
+        canInvite: false,
+        isLocal: runtime_1.runtimeConfig.repositoryMode === 'local',
+        loading: false,
+        inviting: false,
+        familyError: '',
         familyMeta: '',
     },
-    onShow() {
+    inviteRequestId: '',
+    async onShow() {
         const state = (0, store_1.getState)();
-        const tones = ['member-red', 'member-blue', 'member-green'];
-        const members = state.members.map((name, index) => ({
-            name,
-            initial: name.slice(0, 1),
-            role: index === 0 ? '管理员' : '家庭成员',
-            tone: tones[index % tones.length],
-        }));
-        const mealCount = state.weekMenu.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length, 0);
         this.setData({
-            familyName: state.familyName,
-            userName: state.userName,
-            members,
             spicyLevel: state.spicyLevel,
             spicyLabel: this.getSpicyLabel(state.spicyLevel),
             avoidFood: state.avoidFood,
-            familyMeta: `${state.members.length} 位家人 · 本周已安排 ${mealCount} 道菜`,
         });
+        await this.loadFamily();
+    },
+    async loadFamily() {
+        if (this.data.loading || this.data.inviting)
+            return;
+        this.setData({ loading: true, familyError: '', canInvite: false });
+        try {
+            const session = await (0, index_2.ensureSession)();
+            if (!session.onboarded) {
+                wx.reLaunch({ url: '/pages/onboarding/index' });
+                return;
+            }
+            const current = await index_1.familyModule.getCurrentFamily();
+            const tones = ['member-red', 'member-blue', 'member-green'];
+            const members = current.members.map((member, index) => ({
+                id: member.id, name: member.displayName, initial: member.displayName.slice(0, 1),
+                role: member.role === 'owner' ? '管理员' : '家庭成员',
+                tone: tones[index % tones.length], isMe: member.id === current.currentMember.id,
+            }));
+            const keepCode = this.data.inviteExpiresAt === current.invitation.expiresAt && current.invitation.active;
+            this.setData({
+                familyName: current.family.name, userName: current.currentMember.displayName,
+                members, familyMeta: `${members.length} 位家人 · 一起好好吃饭`,
+                canInvite: current.currentMember.role === 'owner', invitationActive: current.invitation.active,
+                ...(!keepCode && !this.data.isLocal ? { inviteCode: '', inviteExpiresAt: '', inviteExpiryLabel: '' } : {}),
+            });
+        }
+        catch (error) {
+            const appError = (0, app_error_1.toAppError)(error);
+            this.setData({ familyName: '', members: [], familyMeta: '', inviteCode: '', familyError: appError.message });
+            if (['UNAUTHENTICATED', 'FAMILY_REQUIRED', 'NOT_FAMILY_MEMBER'].includes(appError.code)) {
+                (0, index_2.clearSession)();
+                wx.reLaunch({ url: '/pages/onboarding/index' });
+            }
+        }
+        finally {
+            this.setData({ loading: false });
+        }
     },
     getSpicyLabel(level) {
         return ['不辣', '微辣', '中辣', '很辣'][level] || '微辣';
@@ -45,18 +85,77 @@ Page({
     },
     saveAvoidFood() {
         (0, store_1.updatePreferences)(this.data.spicyLevel, this.data.avoidFood.trim());
-        wx.showToast({ title: '饮食偏好已保存', icon: 'success' });
+        wx.showToast({ title: '已保存到本机', icon: 'success' });
     },
     copyInviteCode() {
+        if (!this.data.inviteCode || Date.parse(this.data.inviteExpiresAt) <= Date.now()) {
+            this.setData({ inviteCode: '', invitationActive: false });
+            wx.showToast({ title: '请先生成有效邀请码', icon: 'none' });
+            return;
+        }
         wx.setClipboardData({
             data: this.data.inviteCode,
             success: () => wx.showToast({ title: '邀请码已复制', icon: 'success' }),
         });
     },
-    addMember() {
-        this.copyInviteCode();
+    async addMember() {
+        if (this.data.loading || this.data.inviting || !this.data.canInvite)
+            return;
+        if (this.data.inviteCode && Date.parse(this.data.inviteExpiresAt) > Date.now()) {
+            this.copyInviteCode();
+            return;
+        }
+        if (this.data.invitationActive && !this.data.isLocal && !this.inviteRequestId) {
+            wx.showModal({
+                title: '生成新邀请码？', content: '之前的邀请码会立即失效，请把新码发给还没加入的家人。',
+                confirmText: '生成新码', confirmColor: '#18332f',
+                success: (result) => { if (result.confirm)
+                    void this.createInvitation(); },
+            });
+            return;
+        }
+        await this.createInvitation();
+    },
+    async createInvitation() {
+        if (this.data.inviting || this.data.loading || !this.data.canInvite)
+            return;
+        this.inviteRequestId = this.inviteRequestId || (0, request_id_1.createRequestId)();
+        this.setData({ inviting: true, inviteCode: '', inviteExpiryLabel: '' });
+        try {
+            const invitation = await index_1.familyModule.createInvitation(this.inviteRequestId);
+            const expires = new Date(invitation.expiresAt);
+            // Asia/Shanghai matches the family's fixed timezone, independent of device settings.
+            const local = new Date(expires.getTime() + 8 * 3600000);
+            const label = `${local.getUTCMonth() + 1}月${local.getUTCDate()}日 ${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')} 前有效`;
+            this.setData({ inviteCode: invitation.inviteCode, inviteExpiresAt: invitation.expiresAt,
+                inviteExpiryLabel: label, invitationActive: true });
+            this.inviteRequestId = '';
+        }
+        catch (error) {
+            const appError = (0, app_error_1.toAppError)(error);
+            if (appError.code !== 'NETWORK_ERROR' && appError.code !== 'REQUEST_IN_PROGRESS')
+                this.inviteRequestId = '';
+            if (appError.code === 'FORBIDDEN')
+                this.setData({ canInvite: false });
+            wx.showToast({ title: appError.message, icon: 'none' });
+        }
+        finally {
+            this.setData({ inviting: false });
+        }
+    },
+    rotateInvitation() {
+        if (this.data.inviting || !this.data.canInvite)
+            return;
+        wx.showModal({
+            title: '更换邀请码？', content: '旧码会立即失效，已加入的家人不受影响。',
+            confirmText: '更换', confirmColor: '#18332f',
+            success: (result) => { if (result.confirm)
+                void this.createInvitation(); },
+        });
     },
     resetDemo() {
+        if (!this.data.isLocal)
+            return;
         wx.showModal({
             title: '重置体验数据？',
             content: '新增菜谱、菜单调整和采购勾选都会恢复为初始状态。',
@@ -65,6 +164,7 @@ Page({
             success: (result) => {
                 if (result.confirm) {
                     (0, store_1.resetDemo)();
+                    (0, index_2.clearSession)();
                     wx.reLaunch({ url: '/pages/onboarding/index' });
                 }
             },

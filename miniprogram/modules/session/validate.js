@@ -14,7 +14,9 @@ function validateOnboardingInput(input) {
         throw new app_error_1.AppError('VALIDATION_ERROR', '给小饭桌取个名字');
     if (familyName.length > 20)
         throw new app_error_1.AppError('VALIDATION_ERROR', '家庭名称最多填写 20 个字');
-    if (input.mode === 'join' && inviteCode.length < 4)
-        throw new app_error_1.AppError('VALIDATION_ERROR', '邀请码至少填写 4 位');
+    if (input.mode !== 'create' && input.mode !== 'join')
+        throw new app_error_1.AppError('VALIDATION_ERROR', '请选择创建或加入家庭');
+    if (input.mode === 'join' && !/^[A-HJ-NP-Z2-9]{8}$/.test(inviteCode))
+        throw new app_error_1.AppError('VALIDATION_ERROR', '请填写 8 位家庭邀请码');
     return { mode: input.mode, userName, familyName, inviteCode };
 }

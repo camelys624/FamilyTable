@@ -1,5 +1,5 @@
 import { CloudClient } from '../../repositories/cloud-client'
-import { AppError } from '../../utils/app-error'
+import { createRequestId } from '../../utils/request-id'
 import { CompleteOnboardingInput, SessionModule, SessionSnapshot } from './interface'
 import { validateOnboardingInput } from './validate'
 
@@ -12,10 +12,12 @@ interface LoginResult {
 
 interface CurrentFamilyResult {
   family: { name: string }
+  currentMember?: { displayName: string }
   members: Array<{ displayName: string }>
 }
 
 export class CloudSessionAdapter implements SessionModule {
+  private onboardingRequest: { key: string; requestId: string } | null = null
   constructor(private readonly client: CloudClient) {}
 
   async bootstrap(): Promise<SessionSnapshot> {
@@ -33,7 +35,7 @@ export class CloudSessionAdapter implements SessionModule {
     const current = await this.client.call<CurrentFamilyResult>('family', 'family.current')
     return {
       onboarded: true,
-      userName: login.user.displayName,
+      userName: current.currentMember?.displayName || login.user.displayName,
       avatarUrl: login.user.avatarUrl || '',
       familyName: current.family.name,
       members: current.members.map((member) => member.displayName),
@@ -43,20 +45,26 @@ export class CloudSessionAdapter implements SessionModule {
 
   async completeOnboarding(input: CompleteOnboardingInput) {
     const normalized = validateOnboardingInput(input)
-    if (normalized.mode === 'join') {
-      throw new AppError('FEATURE_UNAVAILABLE', '云端加入家庭将在成员邀请阶段开放')
-    }
+    const key = JSON.stringify(normalized)
+    if (this.onboardingRequest?.key !== key) this.onboardingRequest = { key, requestId: createRequestId() }
+    const requestId = this.onboardingRequest.requestId
     if (input.avatarUrl) {
       await this.client.call('auth', 'auth.updateProfile', {
         displayName: normalized.userName,
         avatarUrl: input.avatarUrl,
       })
     }
-    await this.client.call('family', 'family.create', {
-      name: normalized.familyName,
-      displayName: normalized.userName,
-      timezone: 'Asia/Shanghai',
-    })
-    return this.bootstrap()
+    if (normalized.mode === 'join') {
+      await this.client.call('family', 'family.join', {
+        inviteCode: normalized.inviteCode, displayName: normalized.userName,
+      }, requestId)
+    } else {
+      await this.client.call('family', 'family.create', {
+        name: normalized.familyName, displayName: normalized.userName, timezone: 'Asia/Shanghai',
+      }, requestId)
+    }
+    const snapshot = await this.bootstrap()
+    this.onboardingRequest = null
+    return snapshot
   }
 }

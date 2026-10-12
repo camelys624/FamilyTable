@@ -11,6 +11,7 @@
     {
       "name": "families",
       "indexes": [
+        { "name": "idx_families_invite_status", "unique": false, "fields": [{ "field": "inviteCodeHash", "order": "asc" }, { "field": "status", "order": "asc" }] },
         { "name": "idx_families_status_updated", "unique": false, "fields": [{ "field": "status", "order": "asc" }, { "field": "updatedAt", "order": "desc" }] }
       ]
     },

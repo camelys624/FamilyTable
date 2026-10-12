@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const session_1 = require("../../modules/session/index");
+const index_1 = require("../../modules/session/index");
 const app_error_1 = require("../../utils/app-error");
+const runtime_1 = require("../../config/runtime");
 Page({
     data: {
         mode: 'create',
@@ -11,10 +12,12 @@ Page({
         avatarPath: '',
         avatarUrl: '',
         submitting: false,
+        isLocal: runtime_1.runtimeConfig.repositoryMode === 'local',
+        errorMessage: '',
     },
     async onLoad() {
         try {
-            const session = await (0, session_1.ensureSession)();
+            const session = await (0, index_1.ensureSession)();
             if (session.onboarded) {
                 wx.switchTab({ url: '/pages/home/index' });
                 return;
@@ -27,18 +30,28 @@ Page({
         }
     },
     setMode(event) {
-        this.setData({ mode: event.currentTarget.dataset.mode });
+        if (this.data.submitting)
+            return;
+        this.setData({ mode: event.currentTarget.dataset.mode, errorMessage: '' });
     },
     onFamilyName(event) {
+        if (this.data.submitting)
+            return;
         this.setData({ familyName: event.detail.value });
     },
     onUserName(event) {
+        if (this.data.submitting)
+            return;
         this.setData({ userName: event.detail.value });
     },
     onInviteCode(event) {
-        this.setData({ inviteCode: event.detail.value });
+        if (this.data.submitting)
+            return;
+        this.setData({ inviteCode: event.detail.value.trim().toUpperCase(), errorMessage: '' });
     },
     onChooseAvatar(event) {
+        if (this.data.submitting)
+            return;
         this.setData({ avatarPath: event.detail.avatarUrl, avatarUrl: '' });
     },
     async uploadAvatar(tempPath) {
@@ -52,18 +65,19 @@ Page({
     async continue() {
         if (this.data.submitting)
             return;
-        this.setData({ submitting: true });
+        this.setData({ submitting: true, errorMessage: '' });
         try {
             let avatarUrl = this.data.avatarUrl;
-            if (this.data.avatarPath) {
+            if (this.data.avatarPath && !avatarUrl) {
                 try {
                     avatarUrl = await this.uploadAvatar(this.data.avatarPath);
+                    this.setData({ avatarUrl });
                 }
                 catch (error) {
                     wx.showToast({ title: '头像上传失败，可稍后再设置', icon: 'none' });
                 }
             }
-            await (0, session_1.completeOnboarding)({
+            await (0, index_1.completeOnboarding)({
                 mode: this.data.mode,
                 userName: this.data.userName,
                 familyName: this.data.familyName,
@@ -74,6 +88,7 @@ Page({
         }
         catch (error) {
             const appError = (0, app_error_1.toAppError)(error);
+            this.setData({ errorMessage: appError.message });
             wx.showToast({ title: appError.message, icon: 'none' });
         }
         finally {

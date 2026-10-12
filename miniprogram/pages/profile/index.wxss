@@ -29,3 +29,13 @@
 .settings-value { color: #347a5d; font-size: 23rpx; }
 .settings-row.danger { color: #b3614c; }
 .version-text { display: block; text-align: center; margin-top: 22rpx; font-size: 20rpx; color: #8c988f; }
+.invitation-card { padding: 20rpx 24rpx; margin-bottom: 20rpx; }
+.invitation-card .invite-chip { padding: 0; margin-bottom: 14rpx; }
+.invite-code { font-size: 30rpx; letter-spacing: 3rpx; }
+.invite-guide { display: block; margin-top: 10rpx; color: var(--muted); font-size: 23rpx; line-height: 1.7; }
+.rotate-invite { margin: 12rpx 0 0; padding: 0; text-align: left; background: transparent; color: #347a5d; font-size: 23rpx; }
+.rotate-invite::after { border: 0; }
+button.invite-button { width: 152rpx; margin: 0; justify-content: center; box-sizing: border-box; line-height: 1.4; font-weight: 500; }
+.member-card .design-heading > view { flex: 1; min-width: 0; }
+.family-error { display: flex; align-items: center; gap: 20rpx; padding: 24rpx; margin-bottom: 20rpx; color: #b3614c; font-size: 25rpx; }
+.family-error button { flex: none; margin: 0; font-size: 23rpx; color: var(--ink); background: #eef3e9; }
