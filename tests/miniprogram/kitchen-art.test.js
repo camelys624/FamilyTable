@@ -26,7 +26,7 @@ test('pages with kitchen artwork declare a resolvable dependency for lazy compon
 })
 
 test('known ingredients reuse the correct fridge cells; unknown names stay neutral', () => {
-  assert.deepEqual(kitchenArt(' 鸡蛋 '), { src: '/assets/fridge/illustrations-v1.webp', style: 'width:300%;height:200%;left:-100%;top:-100%;' })
+  assert.deepEqual(kitchenArt(' 鸡蛋 '), { src: '/assets/fridge/illustrations-v2.webp', style: 'width:300%;height:200%;left:-100%;top:-100%;' })
   assert.equal(kitchenArt('番茄炒蛋').style, 'width:400%;height:300%;left:-200%;top:-100%;')
   assert.equal(kitchenArt('清蒸鲈鱼').style, 'width:400%;height:300%;left:-300%;top:-100%;')
   assert.equal(kitchenArt('牛肉').style, kitchenArt().style)

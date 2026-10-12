@@ -1,7 +1,7 @@
 <view class="page-shell fridge-page safe-bottom">
   <view class="fridge-hero">
     <view class="hero-copy"><text class="eyebrow">家的食材 · 好好珍惜</text><view class="page-title">打开冰箱</view><text class="subtle hero-note">看看家里还有什么，先吃临期的。</text></view>
-    <view class="illustration hero-art {{batches.length ? 'art-fridge' : 'art-empty'}}" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v1.webp" mode="scaleToFill" /></view>
+    <view class="illustration hero-art {{batches.length ? 'art-fridge' : 'art-empty'}}" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v2.webp" mode="scaleToFill" /></view>
   </view>
   <view class="hero-actions">
     <button class="primary-button add-button" bindtap="openAdd" disabled="{{saving}}"><text class="add-symbol">＋</text>记一份食材</button>
@@ -17,7 +17,7 @@
     <view class="inventory-status" wx:if="{{loading}}">正在查看冰箱…</view>
     <view class="inventory-error" wx:elif="{{loadError}}"><text class="cloud-error-title">冰箱暂时打不开</text><text class="cloud-error-message">{{loadError}}</text><button class="secondary-button error-retry" bindtap="refresh">重新加载</button></view>
     <view class="inventory-empty" wx:elif="{{!batches.length}}">
-      <view class="illustration empty-art art-empty" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v1.webp" mode="scaleToFill" /></view>
+      <view class="illustration empty-art art-empty" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v2.webp" mode="scaleToFill" /></view>
       <text class="empty-title">冰箱还没记食材</text><text class="subtle">把家里剩下的放进来吧。</text>
       <button class="primary-button first-batch-button" bindtap="openAdd" disabled="{{saving}}">＋ 记第一份食材</button>
     </view>
@@ -25,7 +25,7 @@
       <view class="filter-empty" wx:if="{{!filteredBatches.length}}">{{inventoryFilter === 'near' ? '暂无未来 3 天内到期的可用食材' : '暂无可用食材，请核对过期或变质的批次'}}</view>
       <view class="batch-row" wx:for="{{filteredBatches}}" wx:key="id">
         <view class="batch-main" data-id="{{item.id}}" bindtap="openEdit" role="button" aria-label="修改{{item.name}}">
-          <view class="batch-art"><view class="illustration food-art art-{{item.art}}" wx:if="{{item.art}}" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v1.webp" mode="scaleToFill" /></view><text class="food-emoji" wx:else aria-hidden="true">{{item.foodEmoji}}</text></view>
+          <view class="batch-art"><view class="illustration food-art art-{{item.art}}" wx:if="{{item.art}}" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v2.webp" mode="scaleToFill" /></view><text class="food-emoji" wx:else aria-hidden="true">{{item.foodEmoji}}</text></view>
           <view class="batch-copy"><text class="batch-name">{{item.name}}</text><text class="subtle expiry-text">{{item.expiryText}}</text></view>
           <text class="batch-badge {{item.badgeTone}}">{{item.badgeLabel}}</text><text class="row-chevron">›</text>
         </view>
@@ -36,7 +36,7 @@
   </view>
   <view class="paper-card ai-card {{!availableCount || loadError ? 'ai-disabled' : ''}}">
     <view class="ai-copy"><text class="ai-label">AI 建议</text><text class="section-title ai-title">冰箱里能做什么</text><text class="subtle ai-description">{{loadError ? '先重新加载冰箱，再来想菜单。' : (!availableCount ? '记下可用食材后，再来想菜单。' : '用现有食材，想几道家常菜。')}}</text><button class="primary-button suggest-button" bindtap="suggest" loading="{{aiLoading}}" disabled="{{aiLoading || saving || loading || loadError || !availableCount}}">{{aiLoading ? '正在想菜单…' : '帮我想几道菜'}}</button></view>
-    <view class="illustration pan-art art-pan" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v1.webp" mode="scaleToFill" /></view><text class="ai-footnote">建议只供参考，做菜前再核对食材。</text>
+    <view class="illustration pan-art art-pan" aria-hidden="true"><image class="sprite-sheet" src="/assets/fridge/illustrations-v2.webp" mode="scaleToFill" /></view><text class="ai-footnote">建议只供参考，做菜前再核对食材。</text>
   </view>
   <view class="suggestion-error" wx:if="{{aiError}}"><text>{{aiError}}</text><text class="subtle">食材录入和做菜记录仍可使用。</text></view>
   <view class="paper-card suggestion-empty" wx:if="{{aiLoaded && !suggestions.length && !aiError}}">这次没有合适的建议，补充食材后再试试。</view>

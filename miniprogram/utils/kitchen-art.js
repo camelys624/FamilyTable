@@ -12,7 +12,7 @@ function kitchenArt(name = '', kind = 'book') {
     const raw = { '番茄': [0, 1], '西红柿': [0, 1], '鸡蛋': [1, 1], '青菜': [2, 1], '菜心': [2, 1], '小白菜': [2, 1] };
     if (raw[normalized]) {
         const [column, row] = raw[normalized];
-        return { src: '/assets/fridge/illustrations-v1.webp', style: `width:300%;height:200%;left:-${column * 100}%;top:-${row * 100}%;` };
+        return { src: '/assets/fridge/illustrations-v2.webp', style: `width:300%;height:200%;left:-${column * 100}%;top:-${row * 100}%;` };
     }
     let selected = kind;
     if (/番茄.*蛋|西红柿.*蛋/.test(normalized))
@@ -28,5 +28,5 @@ function kitchenArt(name = '', kind = 'book') {
     else if (/^(盐|食盐|葱|小葱|香葱)$/.test(normalized))
         selected = 'seasoning';
     const [column, row] = CELLS[selected] || CELLS.book;
-    return { src: '/assets/kitchen/illustrations-v1.webp', style: `width:400%;height:300%;left:-${column * 100}%;top:-${row * 100}%;` };
+    return { src: '/assets/kitchen/illustrations-v2.webp', style: `width:400%;height:300%;left:-${column * 100}%;top:-${row * 100}%;` };
 }
