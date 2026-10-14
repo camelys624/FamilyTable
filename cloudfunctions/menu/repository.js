@@ -1,5 +1,7 @@
 'use strict'
 
+const { BaseRepository, get } = require('./common')
+
 const {
   codedError,
   documentData,
@@ -71,41 +73,19 @@ function duplicateError(error) {
   return /(duplicate|unique|already exists|已存在|唯一)/i.test(String(error?.message || error || ''))
 }
 
-class CloudBaseMenuRepository {
-  constructor(cloud) {
-    this.db = cloud.database()
-  }
+class CloudBaseMenuRepository extends BaseRepository {
+  constructor(cloud) { super(cloud) }
 
-  async getContext(openid) {
-    const userResult = await this.db.collection('users').where({ openid }).limit(1).get()
-    const user = documentExists(userResult)
-    if (!user || user.status !== 'active') throw codedError('UNAUTHENTICATED', '微信身份已失效，请重新进入小程序')
-
-    const memberResult = await this.db
-      .collection('family_members')
-      .where({ userId: user._id, status: 'active' })
-      .limit(1)
-      .get()
-    const member = documentExists(memberResult)
-    if (!member) throw codedError('FAMILY_REQUIRED', '你还没有创建或加入家庭')
-
-    const familyResult = await this.db.collection('families').where({ _id: member.familyId, status: 'active' }).limit(1).get()
-    if (!documentExists(familyResult)) throw codedError('NOT_FAMILY_MEMBER', '当前家庭已不可访问')
-    return { user, member, familyId: member.familyId }
-  }
+  async getContext(openid) { return this.context(openid) }
 
   async findMenu(database, familyId, menuId) {
-    const result = await database.collection('menus').where({ _id: menuId, familyId }).limit(1).get()
-    return documentExists(result)
+    const menu = await get(database, 'menus', menuId)
+    return menu?.familyId === familyId ? menu : null
   }
 
   async findRecipe(database, familyId, recipeId) {
-    const result = await database
-      .collection('recipes')
-      .where({ _id: recipeId, familyId, deletedAt: null })
-      .limit(1)
-      .get()
-    return documentExists(result)
+    const recipe = await get(database, 'recipes', recipeId)
+    return recipe?.familyId === familyId && !recipe.deletedAt ? recipe : null
   }
 
   async week(openid, weekStart) {
@@ -132,11 +112,8 @@ class CloudBaseMenuRepository {
 
     try {
       return await this.db.runTransaction(async (transaction) => {
-        const existingIdempotency = documentExists(await transaction
-          .collection('idempotency_records')
-          .where({ _id: idempotencyRecordId })
-          .limit(1)
-          .get())
+        Object.assign(context, await this.validateContext(transaction, context))
+        const existingIdempotency = await get(transaction, 'idempotency_records', idempotencyRecordId)
         if (existingIdempotency) {
           if (existingIdempotency.requestHash !== requestHashValue) {
             throw codedError('IDEMPOTENCY_CONFLICT', '同一个 requestId 不能用于不同的添加菜单请求')
@@ -247,11 +224,8 @@ class CloudBaseMenuRepository {
     const timestamp = now()
 
     return this.db.runTransaction(async (transaction) => {
-      const existingIdempotency = documentExists(await transaction
-        .collection('idempotency_records')
-        .where({ _id: idempotencyRecordId })
-        .limit(1)
-        .get())
+      Object.assign(context, await this.validateContext(transaction, context))
+      const existingIdempotency = await get(transaction, 'idempotency_records', idempotencyRecordId)
       if (existingIdempotency) {
         if (existingIdempotency.requestHash !== requestHashValue) {
           throw codedError('IDEMPOTENCY_CONFLICT', '同一个 requestId 不能用于不同的移除菜单请求')

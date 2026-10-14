@@ -36,8 +36,12 @@ export function getWeekDates(): Array<{ key: string; weekday: string; dateLabel:
 }
 
 export function getCurrentWeekKey() {
-  return toDateKey(getMonday())
+  const date = new Date(`${getFamilyToday()}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() - (date.getUTCDay() || 7) + 1)
+  return date.toISOString().slice(0, 10)
 }
+
+export function getFamilyToday() { return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10) }
 
 export function getWeekNumber() {
   const date = getMonday()

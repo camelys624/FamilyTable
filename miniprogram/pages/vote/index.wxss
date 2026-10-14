@@ -24,3 +24,10 @@
 .candidate-note { display: block; margin-top: 12rpx; color: var(--muted); font-size: 22rpx; line-height: 1.5; }
 .vote-tip { display: flex; align-items: center; gap: 22rpx; padding: 30rpx; font-weight: 650; font-size: 26rpx; line-height: 1.6; }
 .note-leaf { color: #8d9d52; font-size: 48rpx; }
+.poll-filter { display: flex; align-items: center; gap: 22rpx; padding: 18rpx 24rpx; margin-bottom: 22rpx; font-size: 24rpx; }
+.poll-filter button { margin-left: auto; font-size: 22rpx; color: var(--ink); background: #eef3e9; }
+.poll-action { margin: 24rpx 0; }
+.poll-form { padding: 26rpx; margin-top: 24rpx; }
+.poll-form .input-shell { margin: 22rpx 0; }
+.poll-choice { display: flex; justify-content: space-between; padding: 22rpx 18rpx; margin-top: 12rpx; border: 2rpx solid var(--line); border-radius: 18rpx; font-size: 26rpx; }
+.poll-choice.picked { border-color: var(--leaf); background: #eaf2ea; }

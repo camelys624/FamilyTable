@@ -57,10 +57,10 @@ That reproduces the committed output byte-for-byte except for the import binding
 
 ### Two data paths — migration in progress
 
-The app is mid-migration from a local-storage demo to CloudBase, following docs §9.3 phases A–D. **Only phase A (auth + family) is on the cloud path today.**
+Cloud mode now routes session, family, recipes, menus, fridge, votes, shopping and private preferences through domain adapters. See `docs/上线准备与验收.md` for deployment and acceptance status; source implementation does not prove cloud deployment.
 
-- `miniprogram/services/store.ts` — the entire app state as one `wx.setStorageSync('family-menu-state-v1')` blob, plus seed recipes. Every tab page (home, menu, recipes, vote, shopping, profile) still calls it directly.
-- `miniprogram/modules/session/` — the one migrated slice, and the template for the rest: a `SessionModule` interface, a `LocalSessionAdapter` (wraps `store.ts`) and a `CloudSessionAdapter` (calls cloud functions), with `index.ts` choosing between them from `runtimeConfig.repositoryMode` at import time. Only `app.ts` and `pages/onboarding` consume it.
+- `miniprogram/services/store.ts` — local demo storage and seed recipes, used only by explicitly local adapters and demo reset.
+- `miniprogram/modules/` — domain interface, local adapter, cloud adapter and factory selected by `runtimeConfig.repositoryMode`. Main pages use these modules and session guards, never local demo business state in cloud mode.
 
 When migrating a slice, reuse that shape: interface + local adapter + cloud adapter + factory keyed on `repositoryMode`. Per docs §7.6, a failed cloud call must never silently fall back to local/seed data, and production builds are cloud-only.
 
@@ -68,7 +68,7 @@ When migrating a slice, reuse that shape: interface + local adapter + cloud adap
 
 ### Runtime config gating
 
-`config/environments.ts` defines the dev/test/prod profiles (`stage`, `repositoryMode`, `cloudEnvId`, `apiVersion`) and exports `activeStage` — the single switch deciding local vs cloud. It currently points at `test` with a live `cloudEnvId`, so the app boots against CloudBase.
+`config/environments.ts` defines dev/test/prod profiles and exports `activeStage`. Current stage is `dev`, cloud mode, using the existing personal development environment. Test and production are unconfigured. The user has deferred creating a production environment and migration until external users need it; preserve current data.
 
 `config/runtime.ts` `initializeCloudRuntime()` runs in `App.onLaunch` and hard-fails on prod-with-local-repository, a missing or `__`-prefixed placeholder env id, `touristappid`, or a base library without `wx.cloud`. `verify-runtime-config.js` greps the `.ts` source for those guard expressions, so keep them written literally (e.g. `appId === 'touristappid'`).
 
@@ -76,7 +76,7 @@ Only non-sensitive config belongs here — AppSecret, service-account credential
 
 ### Cloud function shape
 
-One function per domain, routed internally by `action`. Eight are planned (`auth family recipe menu vote shopping preference fridge`); `auth`, `family`, `recipe`, `menu` and `fridge` exist. `fridge` additionally has `suggestion.js` (CloudBase AI call, model chosen by the `FRIDGE_AI_MODEL` function env var; unset → `FEATURE_UNAVAILABLE`, never a fake result). Three files each, and the split is load-bearing:
+One function per domain, routed internally by `action`. All eight are implemented (`auth family recipe menu vote shopping preference fridge`). `fridge` additionally has `suggestion.js` (CloudBase AI model selected by `FRIDGE_AI_MODEL`; unset → `FEATURE_UNAVAILABLE`). Each deployed function is self-contained; keep duplicated `common.js` and `content-safety.js` helpers consistent. The core split is:
 
 - `index.js` — thin adapter: `cloud.init`, identity from `cloud.getWXContext().OPENID`, delegate. The only entry-level `wx-server-sdk` contact.
 - `handler.js` — pure factory `createXHandler(repository, logger)` returning `(event, identity)`. Identity check → action routing → payload whitelist/validation → repository call → uniform response. Fully testable against a fake repository, which is what `tests/` does.
@@ -95,7 +95,7 @@ Client side: `repositories/cloud-client.ts` mints the `requestId`, unwraps `ok`/
 
 `cloudfunctions/family/repository.js` `create()` is the reference implementation for every future write. Inside one `db.runTransaction`: look up `idempotency_records` by an id derived from `userId + action + requestId`; a same-requestId replay with a different `requestHash` is `IDEMPOTENCY_CONFLICT`, a `succeeded` record replays its `responseSnapshot`, an in-flight one is `REQUEST_IN_PROGRESS`. `stableValue()` sorts object keys before hashing so key order can't change the hash. Deterministic document ids (e.g. membership `fm_<hash(userId)>`) are what make the "already in a family" check race-safe. An `operation_logs` row is written in the same transaction.
 
-Docs §8.5 lists the other operations that must be transactional, and §8.3/§8.4 specify the optimistic-lock (`expectedVersion` → `VERSION_CONFLICT`) and vote-uniqueness patterns the unbuilt slices owe.
+Docs §8.5 lists transactional operations; §8.3/§8.4 specify optimistic locking and vote uniqueness. Shopping uses explicit `expectedVersion`; vote documents have deterministic poll/member ids. `WriteIntent` retains the same request and input after an uncertain network result. Transactions use document reads and revalidate membership before writes.
 
 ### Database
 

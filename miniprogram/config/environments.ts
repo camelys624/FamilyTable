@@ -3,25 +3,25 @@ import type { RepositoryMode, RuntimeConfig, RuntimeStage } from './runtime'
 export const environmentProfiles: Record<RuntimeStage, RuntimeConfig> = {
   dev: {
     stage: 'dev',
-    repositoryMode: 'local',
-    cloudEnvId: 'dev1',
+    repositoryMode: 'cloud',
+    cloudEnvId: 'cloud1-d3g26za1sf043b587',
     apiVersion: 'v1',
   },
   test: {
     stage: 'test',
     repositoryMode: 'cloud',
-    cloudEnvId: 'cloud1-d3g26za1sf043b587',
+    cloudEnvId: '__TEST_ENV_NOT_CONFIGURED__',
     apiVersion: 'v1',
   },
   prod: {
     stage: 'prod',
     repositoryMode: 'cloud',
-    cloudEnvId: 'prod1',
+    cloudEnvId: '__PRODUCTION_ENV_NOT_CONFIGURED__',
     apiVersion: 'v1',
   },
 }
 
-export const activeStage: RuntimeStage = 'test'
+export const activeStage: RuntimeStage = 'dev'
 
 export function getEnvironmentProfile(stage: RuntimeStage) {
   return { ...environmentProfiles[stage] }

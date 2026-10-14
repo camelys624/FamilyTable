@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.runtimeConfig = void 0;
 exports.initializeCloudRuntime = initializeCloudRuntime;
 const environments_1 = require("./environments");
-// 构建时由环境 profile 注入；当前默认保持本地演示模式。
+// 当前个人使用直接连接已确认的开发云环境，数据来源仍为 cloud。
 exports.runtimeConfig = (0, environments_1.getEnvironmentProfile)(environments_1.activeStage);
 function getMiniProgramAppId() {
     if (typeof wx.getAccountInfoSync !== 'function')

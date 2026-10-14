@@ -1,6 +1,7 @@
 'use strict'
 
 const cloud = require('wx-server-sdk')
+const { guardRepository } = require('./content-safety')
 const { createFridgeHandler } = require('./handler')
 const { CloudBaseFridgeRepository } = require('./repository')
 const { createCloudBaseSuggester } = require('./suggestion')
@@ -8,7 +9,7 @@ const { createCloudBaseSuggester } = require('./suggestion')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const handler = createFridgeHandler(
-  new CloudBaseFridgeRepository(cloud, createCloudBaseSuggester(cloud, process.env, console)),
+  guardRepository(new CloudBaseFridgeRepository(cloud, createCloudBaseSuggester(cloud, process.env, console)), cloud, { createBatch: { fields: ['name'] }, updateBatch: { fields: ['name'] } }),
   console,
 )
 

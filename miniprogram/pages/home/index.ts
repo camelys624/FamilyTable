@@ -1,8 +1,10 @@
-import { AppState, Recipe } from '../../models/types'
+import { Recipe } from '../../models/types'
 import { menuModule } from '../../modules/menu/index'
 import { recipeModule } from '../../modules/recipe/index'
-import { formatToday, getCurrentWeekKey } from '../../utils/date'
-import { getState, generateShoppingList, isShoppingListStale } from '../../services/store'
+import { formatToday, getCurrentWeekKey, getFamilyToday } from '../../utils/date'
+import { voteModule } from '../../modules/vote/index'
+import { shoppingModule } from '../../modules/shopping/index'
+import { toRecipe } from '../../modules/recipe/cloud-adapter'
 import { ensureSession } from '../../modules/session/index'
 import { toAppError } from '../../utils/app-error'
 
@@ -21,6 +23,8 @@ Page({
     votedRecipeId: '',
     remainingShopping: 0,
     shoppingStale: false,
+    voteError: '',
+    shoppingError: '',
     loadError: '',
     loading: true,
   },
@@ -47,14 +51,16 @@ Page({
       wx.reLaunch({ url: '/pages/onboarding/index' })
       return
     }
-    const state: AppState = getState()
-    const userName = session.userName || state.userName
+    const userName = session.userName || '家人'
     try {
       const [menu, recipes] = await Promise.all([
         menuModule.getWeekMenu(getCurrentWeekKey()),
         recipeModule.listRecipes(),
       ])
-      const todayIndex = (new Date().getDay() || 7) - 1
+      const extras = await Promise.allSettled([voteModule.getCurrent(getFamilyToday(), 'dinner'), shoppingModule.getList(getCurrentWeekKey())])
+      const poll = extras[0].status === 'fulfilled' ? extras[0].value : null
+      const shopping = extras[1].status === 'fulfilled' ? extras[1].value : null
+      const todayIndex = (new Date(`${getFamilyToday()}T12:00:00Z`).getUTCDay() || 7) - 1
       const day = menu.days[todayIndex] || menu.days[0]
       if (!day) { this.setData({ loading: false }); return }
       const emojiByTone: Record<string, string> = {
@@ -94,14 +100,16 @@ Page({
         })
       }
       this.setData({
-        familyName: session.familyName || state.familyName,
+        familyName: session.familyName || '家的饭桌',
         userName,
         todayText: formatToday(),
         todayDishes,
-        pollCandidates: recipes.slice(0, 3),
-        votedRecipeId: state.votedRecipeId,
-        remainingShopping: state.shoppingItems.filter((item) => !item.checked).length,
-        shoppingStale: isShoppingListStale(),
+        pollCandidates: (poll?.poll?.candidates || []).map((entry) => toRecipe({ ...entry.recipeSnapshot, id: entry.recipeId, duration: 20 })),
+        votedRecipeId: poll?.currentVote?.candidateRecipeId || '',
+        remainingShopping: shopping?.items.filter((item) => !item.checked).length || 0,
+        shoppingStale: shopping?.stale || false,
+        voteError: extras[0].status === 'rejected' ? toAppError(extras[0].reason).message : '',
+        shoppingError: extras[1].status === 'rejected' ? toAppError(extras[1].reason).message : '',
         loadError: '',
       })
     } catch (error) {
@@ -126,8 +134,6 @@ Page({
   },
 
   openShopping() {
-    const state = getState()
-    if (!state.shoppingItems.length) generateShoppingList()
     wx.navigateTo({ url: '/pages/shopping/index' })
   },
 })

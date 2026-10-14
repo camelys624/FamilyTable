@@ -194,3 +194,35 @@ test('compatible client requires an HTTPS base URL', () => {
     (error) => error.code === 'FEATURE_UNAVAILABLE' && /HTTPS/.test(error.message),
   )
 })
+
+test('assistant failures expose only safe status and parameter diagnostics', async () => {
+  const providerError = { status: 400, param: 'tool_choice', message: 'secret-api-key private-prompt', error: { body: 'private-prompt' } }
+  const assistant = createOpenAICompatibleIngredientAssistant({ AI_API_KEY: 'secret-api-key', AI_BASE_URL: 'https://api.example.com/v1', AI_MODEL: 'test-model' }, () => ({ chat: { completions: { create: async () => { throw providerError } } } }))
+  await assert.rejects(assistant.extract(['私有步骤']), (error) => {
+    assert.equal(error.code, 'FEATURE_UNAVAILABLE')
+    assert.deepEqual(error.details, { check: 'ingredient_assistant', reason: 'provider_error', httpStatus: 400, parameter: 'tool_choice' })
+    assert.equal(JSON.stringify(error).includes('secret-api-key'), false)
+    assert.equal(JSON.stringify(error).includes('private-prompt'), false)
+    assert.equal(error.providerCause, undefined)
+    return true
+  })
+})
+
+test('assistant distinguishes SDK dependency and network failures without leaking upstream errors', async () => {
+  for (const [cause, reason] of [[{ code: 'MODULE_NOT_FOUND', message: 'private path' }, 'sdk_dependency_error'], [{ name: 'APIConnectionError', cause: { code: 'ECONNRESET' }, message: 'private URL' }, 'network_error']]) {
+    const assistant = createOpenAICompatibleIngredientAssistant({ AI_API_KEY: 'key', AI_BASE_URL: 'https://api.example.com/v1', AI_MODEL: 'model' }, () => ({ chat: { completions: { create: async () => { throw cause } } } }))
+    await assert.rejects(assistant.extract(['炒鸡蛋']), (error) => {
+      assert.equal(error.details.reason, reason)
+      assert.equal(JSON.stringify(error).includes('private'), false)
+      return true
+    })
+  }
+})
+
+test('ingredient extraction works with providers that reject zero top_p', async () => {
+  const assistant = createOpenAICompatibleIngredientAssistant({ AI_API_KEY: 'key', AI_BASE_URL: 'https://api.example.com/v1', AI_MODEL: 'model' }, () => ({ chat: { completions: { create: async (request) => {
+    if (request.top_p !== undefined && request.top_p <= 0) throw { status: 400, param: 'top_p' }
+    return { choices: [{ message: { tool_calls: [{ function: { name: 'extract_recipe_ingredients', arguments: JSON.stringify({ ingredients: [] }) } }] } }] }
+  } } } }))
+  assert.deepEqual(await assistant.extract(['炒鸡蛋']), { ingredients: [] })
+})

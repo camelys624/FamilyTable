@@ -10,6 +10,7 @@ export interface SessionSnapshot {
 }
 
 export interface CompleteOnboardingInput {
+  termsAccepted?: boolean
   mode: OnboardingMode
   userName: string
   familyName?: string

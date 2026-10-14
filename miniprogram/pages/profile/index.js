@@ -6,6 +6,8 @@ const index_1 = require("../../modules/family/index");
 const index_2 = require("../../modules/session/index");
 const app_error_1 = require("../../utils/app-error");
 const request_id_1 = require("../../utils/request-id");
+const index_3 = require("../../modules/preference/index");
+const write_intent_1 = require("../../utils/write-intent");
 Page({
     data: {
         familyName: '',
@@ -14,6 +16,7 @@ Page({
         spicyLevel: 1,
         spicyLabel: '微辣',
         avoidFood: '',
+        preferenceNotes: '',
         inviteCode: '',
         inviteExpiresAt: '',
         inviteExpiryLabel: '',
@@ -24,16 +27,32 @@ Page({
         inviting: false,
         familyError: '',
         familyMeta: '',
+        preferenceLoading: false,
+        preferenceSaving: false,
+        preferenceError: '',
+        preferencePending: false,
     },
     inviteRequestId: '',
+    preferenceWriter: new write_intent_1.WriteIntent(),
     async onShow() {
-        const state = (0, store_1.getState)();
-        this.setData({
-            spicyLevel: state.spicyLevel,
-            spicyLabel: this.getSpicyLabel(state.spicyLevel),
-            avoidFood: state.avoidFood,
-        });
         await this.loadFamily();
+        if (!this.data.familyError)
+            await this.loadPreferences();
+    },
+    async loadPreferences() {
+        if (this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceLoading)
+            return;
+        this.setData({ preferenceLoading: true, preferenceError: '' });
+        try {
+            const preference = await index_3.preferenceModule.getMine();
+            this.setData({ spicyLevel: preference.spicyLevel, spicyLabel: this.getSpicyLabel(preference.spicyLevel), avoidFood: preference.avoidFoods.join('、'), preferenceNotes: preference.notes || '' });
+        }
+        catch (error) {
+            this.setData({ preferenceError: (0, app_error_1.toAppError)(error).message });
+        }
+        finally {
+            this.setData({ preferenceLoading: false });
+        }
     },
     async loadFamily() {
         if (this.data.loading || this.data.inviting)
@@ -76,17 +95,34 @@ Page({
         return ['不辣', '微辣', '中辣', '很辣'][level] || '微辣';
     },
     onSpicyChange(event) {
+        if (this.data.preferenceLoading || this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceError)
+            return;
         const spicyLevel = Number(event.detail.value);
         this.setData({ spicyLevel, spicyLabel: this.getSpicyLabel(spicyLevel) });
-        (0, store_1.updatePreferences)(spicyLevel, this.data.avoidFood);
     },
     onAvoidInput(event) {
+        if (this.data.preferenceLoading || this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceError)
+            return;
         this.setData({ avoidFood: event.detail.value });
     },
-    saveAvoidFood() {
-        (0, store_1.updatePreferences)(this.data.spicyLevel, this.data.avoidFood.trim());
-        wx.showToast({ title: '已保存到本机', icon: 'success' });
+    async saveAvoidFood() {
+        if (this.data.preferenceLoading || this.data.preferenceSaving || (this.data.preferenceError && !this.data.preferencePending))
+            return;
+        const input = this.preferenceWriter.pending?.input || { spicyLevel: this.data.spicyLevel, avoidFoods: this.data.avoidFood.split(/[、，,\n]/).map((name) => name.trim()).filter(Boolean), notes: this.data.preferenceNotes };
+        this.setData({ preferenceSaving: true, preferenceError: '' });
+        try {
+            await this.preferenceWriter.run('updateMine', input, (requestId) => index_3.preferenceModule.updateMine(input, requestId));
+            this.setData({ preferencePending: false });
+            wx.showToast({ title: '口味档案已保存', icon: 'success' });
+        }
+        catch (error) {
+            this.setData({ preferencePending: Boolean(this.preferenceWriter.pending), preferenceError: (0, app_error_1.toAppError)(error).message });
+        }
+        finally {
+            this.setData({ preferenceSaving: false });
+        }
     },
+    openLegal() { wx.navigateTo({ url: '/pages/legal/index?type=privacy' }); },
     copyInviteCode() {
         if (!this.data.inviteCode || Date.parse(this.data.inviteExpiresAt) <= Date.now()) {
             this.setData({ inviteCode: '', invitationActive: false });

@@ -1,4 +1,5 @@
 'use strict'
+const crypto = require('crypto')
 
 function codedError(code, message, details = {}) {
   return Object.assign(new Error(message), { code, details })
@@ -47,7 +48,7 @@ function preferenceView(preference) {
 
 class CloudBaseAuthRepository {
   constructor(cloud) {
-    this.db = cloud.database()
+    this.db = cloud.database({ throwOnNotFound: false })
   }
 
   async findUser(openid) {
@@ -69,8 +70,16 @@ class CloudBaseAuthRepository {
         updatedAt: now,
         schemaVersion: 1,
       }
-      const created = await this.db.collection('users').add({ data })
-      user = { _id: created._id, ...data }
+      const id = `user_${crypto.createHash('sha256').update(openid).digest('hex').slice(0, 40)}`
+      user = await this.db.runTransaction(async (transaction) => {
+        const current = (await transaction.collection('users').doc(id).get()).data
+        if (current) {
+          if (current.status !== 'active') throw codedError('UNAUTHENTICATED', '当前账号不可用')
+          return current
+        }
+        await transaction.collection('users').doc(id).set({ data })
+        return { _id: id, ...data }
+      })
     } else {
       if (user.status !== 'active') throw codedError('UNAUTHENTICATED', '当前账号不可用')
       await this.db.collection('users').doc(user._id).update({ data: { lastLoginAt: now, updatedAt: now } })
@@ -123,6 +132,18 @@ class CloudBaseAuthRepository {
         updatedAt,
       }),
     }
+  }
+
+  async acceptTerms(openid, version) {
+    const user = await this.findUser(openid)
+    if (!user || user.status !== 'active') throw codedError('UNAUTHENTICATED', '当前账号不可用')
+    return this.db.runTransaction(async (transaction) => {
+      const current = (await transaction.collection('users').doc(user._id).get()).data
+      if (!current || current.status !== 'active' || current.openid !== openid) throw codedError('UNAUTHENTICATED', '当前账号不可用')
+      const consent = current.privacyConsent?.version === version ? current.privacyConsent : { version, acceptedAt: new Date() }
+      await transaction.collection('users').doc(user._id).update({ data: { privacyConsent: consent } })
+      return { consent }
+    })
   }
 }
 

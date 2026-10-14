@@ -10,7 +10,7 @@ export interface RuntimeConfig {
   apiVersion: 'v1'
 }
 
-// 构建时由环境 profile 注入；当前默认保持本地演示模式。
+// 当前个人使用直接连接已确认的开发云环境，数据来源仍为 cloud。
 export const runtimeConfig: RuntimeConfig = getEnvironmentProfile(activeStage)
 
 function getMiniProgramAppId() {

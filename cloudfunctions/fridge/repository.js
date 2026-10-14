@@ -1,4 +1,5 @@
 'use strict'
+const { BaseRepository } = require('./common')
 
 const {
   codedError,
@@ -90,9 +91,10 @@ function findMenuItem(menu, date, mealType, itemId) {
   return (day?.[mealType] || []).find((entry) => entry.id === itemId) || null
 }
 
-class CloudBaseFridgeRepository {
+class CloudBaseFridgeRepository extends BaseRepository {
   // suggester: async ({ stockNames, recipes, requestId }) => [{ name, reason, ingredients, steps }]
   constructor(cloud, suggester) {
+    super(cloud)
     // 事务内只能用 doc() 单记录读写；找不到记录时返回 null 而不是抛错。
     this.db = cloud.database({ throwOnNotFound: false })
     this.suggester = suggester
@@ -129,6 +131,7 @@ class CloudBaseFridgeRepository {
     const recordId = idempotencyId(context.user._id, action, requestId)
     const timestamp = now()
     return this.db.runTransaction(async (transaction) => {
+      Object.assign(context, await this.validateContext(transaction, context))
       const existing = (await transaction.collection('idempotency_records').doc(recordId).get())?.data || null
       if (existing) {
         if (existing.requestHash !== requestHashValue) {

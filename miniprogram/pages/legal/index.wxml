@@ -1,0 +1,25 @@
+<view class="page-shell legal-page">
+  <view class="legal-tabs"><button bindtap="showPrivacy" class="{{type === 'privacy' ? 'active' : ''}}">隐私政策</button><button bindtap="showTerms" class="{{type === 'terms' ? 'active' : ''}}">用户协议</button></view>
+  <view class="paper-card legal-card">
+    <view class="page-title">{{type === 'privacy' ? '隐私政策' : '用户协议'}}</view><text class="subtle">更新及生效日期：{{version}}</text>
+    <block wx:if="{{type === 'privacy'}}">
+      <text class="legal-heading">1. 运营者与联系</text><text>{{productName}} 由 {{operator}} 运营。关于个人信息、数据更正、删除或注销请求，请联系 {{contactEmail}}。</text>
+      <text class="legal-heading">2. 我们处理的信息</text><text>为建立账号并区分家庭成员，小程序使用微信提供的当前小程序用户标识 OpenID，以及登录时间和操作记录。你可以填写家庭名称、家庭内称呼，记录菜谱、周菜单、投票、采购清单和冰箱食材。你自行填写的忌口与吃辣偏好仅用于保存你的口味档案。</text>
+      <text>头像为可选项：只有你主动选择时才上传到云存储，不选择也可以使用主要功能。不要在称呼、菜谱、备注或忌口中填写身份证号、联系方式等与功能无关的信息。</text>
+      <text class="legal-heading">3. 家庭共享范围</text><text>同一家庭的有效成员可以查看家庭内成员称呼、菜谱、菜单、投票与投票参与者、采购清单和冰箱记录。邀请码可以让持有码的其他微信用户加入家庭，请只交给你信任的家人。口味档案接口只允许当前账号读取和更新自己的详细偏好。</text>
+      <text class="legal-heading">4. AI 功能</text><text>只有你主动点击 AI 整理或菜品建议时，才把当前菜谱步骤、食材名称或可用冰箱食材名称等任务内容发送给配置的 AI 服务。该功能由腾讯云开发或腾讯混元等当前配置的模型服务处理，不向模型发送 OpenID、家庭标识、成员称呼、头像或口味档案。AI 输出需要你核对，不作为食品安全、过敏或医疗判断依据。不使用 AI 时仍可手动记录和编辑。</text>
+      <text>为安全展示家庭共享内容，家庭称呼、家庭名称、菜谱、投票标题和食材名称等文本会发送给微信官方内容安全接口检测，并携带接口要求的当前用户标识；可选头像也会检测。这些检查不属于 AI 推荐，检查失败时不会保存或展示该次提交。</text><text class="legal-heading">5. 存储、保护与保留</text><text>业务数据存储在腾讯云开发环境；客户端通过云函数访问家庭数据，服务端校验当前身份和家庭关系。成功写入回执通常保留 7 天用于网络重试；若环境未配置自动清理，回执可能继续保留至后台清理。家庭共同记录在家庭使用期间保留。小程序不把你的家庭内容用作广告投放，也不主动公开给其他家庭。</text>
+      <text class="legal-heading">6. 你的权利</text><text>你可以在加入时设置称呼，并修改自己的口味记录，以及按权限编辑或删除家庭内容。暂不提供自助注销入口；你可通过邮箱申请更正、删除个人信息或注销账号，运营者核验身份后处理。已被家人共同使用的历史记录可能需要保留或去标识化，具体处理结果会向你说明。你可停止使用 AI 或不提供可选头像。</text>
+      <text class="legal-heading">7. 未成年人和政策变化</text><text>未成年人请在监护人指导下使用，不填写与家庭饮食管理无关的个人信息。政策发生实质变化时，会更新生效日期并提供可查看的说明。涉及新增个人信息用途或权限时，会在对应功能中征求你的同意。</text>
+      <button class="secondary-button" bindtap="openWechatPrivacy">查看微信隐私保护指引</button>
+    </block>
+    <block wx:else>
+      <text class="legal-heading">1. 服务范围</text><text>{{productName}} 帮助家庭记录菜谱、安排菜单、商量用餐、维护采购单和冰箱库存。使用前请阅读本协议及隐私政策，并自行判断内容是否适合家庭成员。</text>
+      <text class="legal-heading">2. 账号和家庭</text><text>账号对应当前微信身份，每个账号只加入一个家庭。管理员负责保管邀请码并邀请可信成员。请勿冒用他人身份、尝试访问其他家庭数据或干扰服务。</text>
+      <text class="legal-heading">3. 你提供的内容</text><text>请确保有权记录和使用提交的文字或图片，不提交违法、侵权或无关的敏感信息。你授予运营者为提供家庭共享功能而保存和展示这些内容所必需的许可，内容的其他权利仍属于你或原权利人。</text>
+      <text class="legal-heading">4. 食品与 AI 建议</text><text>保质期、食材状态和食谱信息由用户记录，可能不完整或过时。做菜前请核对实际库存、保存条件和食材安全；过期或变质食材不要食用。AI 内容可能不准确，不能代替你的核对或专业意见；有过敏、特殊饮食或健康需求时请咨询适当的专业人士。</text>
+      <text class="legal-heading">5. 服务变化与反馈</text><text>服务可能因网络、微信平台或云服务故障暂时不可用。失败时请保留输入并重试，避免把未确认的操作当作完成。运营者会处理反馈和维护问题，不限制依法不能排除的责任与用户权利。如需帮助、投诉或数据处理，请联系 {{contactEmail}}。</text>
+    </block>
+    <text class="legal-heading">联系运营者</text><text>{{operator}} · {{contactEmail}}</text><button class="secondary-button" bindtap="copyContact">复制联系邮箱</button>
+  </view>
+</view>

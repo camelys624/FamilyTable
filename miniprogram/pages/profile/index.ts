@@ -1,9 +1,11 @@
-import { getState, resetDemo, updatePreferences } from '../../services/store'
+import { resetDemo } from '../../services/store'
 import { runtimeConfig } from '../../config/runtime'
 import { familyModule } from '../../modules/family/index'
 import { clearSession, ensureSession } from '../../modules/session/index'
 import { toAppError } from '../../utils/app-error'
 import { createRequestId } from '../../utils/request-id'
+import { preferenceModule } from '../../modules/preference/index'
+import { WriteIntent } from '../../utils/write-intent'
 
 Page({
   data: {
@@ -13,6 +15,7 @@ Page({
     spicyLevel: 1,
     spicyLabel: '微辣',
     avoidFood: '',
+    preferenceNotes: '',
     inviteCode: '',
     inviteExpiresAt: '',
     inviteExpiryLabel: '',
@@ -23,17 +26,27 @@ Page({
     inviting: false,
     familyError: '',
     familyMeta: '',
+    preferenceLoading: false,
+    preferenceSaving: false,
+    preferenceError: '',
+    preferencePending: false,
   },
   inviteRequestId: '',
+  preferenceWriter: new WriteIntent(),
 
   async onShow() {
-    const state = getState()
-    this.setData({
-      spicyLevel: state.spicyLevel,
-      spicyLabel: this.getSpicyLabel(state.spicyLevel),
-      avoidFood: state.avoidFood,
-    })
     await this.loadFamily()
+    if (!this.data.familyError) await this.loadPreferences()
+  },
+
+  async loadPreferences() {
+    if (this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceLoading) return
+    this.setData({ preferenceLoading: true, preferenceError: '' })
+    try {
+      const preference = await preferenceModule.getMine()
+      this.setData({ spicyLevel: preference.spicyLevel, spicyLabel: this.getSpicyLabel(preference.spicyLevel), avoidFood: preference.avoidFoods.join('、'), preferenceNotes: preference.notes || '' })
+    } catch (error) { this.setData({ preferenceError: toAppError(error).message }) }
+    finally { this.setData({ preferenceLoading: false }) }
   },
 
   async loadFamily() {
@@ -76,19 +89,29 @@ Page({
   },
 
   onSpicyChange(event: any) {
+    if (this.data.preferenceLoading || this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceError) return
     const spicyLevel = Number(event.detail.value)
     this.setData({ spicyLevel, spicyLabel: this.getSpicyLabel(spicyLevel) })
-    updatePreferences(spicyLevel, this.data.avoidFood)
   },
 
   onAvoidInput(event: any) {
+    if (this.data.preferenceLoading || this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceError) return
     this.setData({ avoidFood: event.detail.value })
   },
 
-  saveAvoidFood() {
-    updatePreferences(this.data.spicyLevel, this.data.avoidFood.trim())
-    wx.showToast({ title: '已保存到本机', icon: 'success' })
+  async saveAvoidFood() {
+    if (this.data.preferenceLoading || this.data.preferenceSaving || (this.data.preferenceError && !this.data.preferencePending)) return
+    const input = this.preferenceWriter.pending?.input || { spicyLevel: this.data.spicyLevel, avoidFoods: this.data.avoidFood.split(/[、，,\n]/).map((name) => name.trim()).filter(Boolean), notes: this.data.preferenceNotes }
+    this.setData({ preferenceSaving: true, preferenceError: '' })
+    try {
+      await this.preferenceWriter.run('updateMine', input, (requestId) => preferenceModule.updateMine(input as any, requestId))
+      this.setData({ preferencePending: false })
+      wx.showToast({ title: '口味档案已保存', icon: 'success' })
+    } catch (error) { this.setData({ preferencePending: Boolean(this.preferenceWriter.pending), preferenceError: toAppError(error).message }) }
+    finally { this.setData({ preferenceSaving: false }) }
   },
+
+  openLegal() { wx.navigateTo({ url: '/pages/legal/index?type=privacy' }) },
 
   copyInviteCode() {
     if (!this.data.inviteCode || Date.parse(this.data.inviteExpiresAt) <= Date.now()) {

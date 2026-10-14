@@ -1,5 +1,6 @@
 import { CloudClient } from '../../repositories/cloud-client'
 import { createRequestId } from '../../utils/request-id'
+import { legalConfig } from '../../config/legal'
 import { CompleteOnboardingInput, SessionModule, SessionSnapshot } from './interface'
 import { validateOnboardingInput } from './validate'
 
@@ -48,6 +49,7 @@ export class CloudSessionAdapter implements SessionModule {
     const key = JSON.stringify(normalized)
     if (this.onboardingRequest?.key !== key) this.onboardingRequest = { key, requestId: createRequestId() }
     const requestId = this.onboardingRequest.requestId
+    await this.client.call('auth', 'auth.acceptTerms', { version: legalConfig.version }, `${requestId}_terms`)
     if (input.avatarUrl) {
       await this.client.call('auth', 'auth.updateProfile', {
         displayName: normalized.userName,

@@ -3,8 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../../modules/menu/index");
 const index_2 = require("../../modules/recipe/index");
 const date_1 = require("../../utils/date");
-const store_1 = require("../../services/store");
-const index_3 = require("../../modules/session/index");
+const index_3 = require("../../modules/vote/index");
+const index_4 = require("../../modules/shopping/index");
+const cloud_adapter_1 = require("../../modules/recipe/cloud-adapter");
+const index_5 = require("../../modules/session/index");
 const app_error_1 = require("../../utils/app-error");
 Page({
     data: {
@@ -16,6 +18,8 @@ Page({
         votedRecipeId: '',
         remainingShopping: 0,
         shoppingStale: false,
+        voteError: '',
+        shoppingError: '',
         loadError: '',
         loading: true,
     },
@@ -28,7 +32,7 @@ Page({
     },
     async loadData() {
         this.setData({ loading: true });
-        const session = await (0, index_3.ensureSession)().catch((error) => {
+        const session = await (0, index_5.ensureSession)().catch((error) => {
             const message = (0, app_error_1.toAppError)(error).message;
             this.setData({ loadError: message });
             wx.showToast({ title: message, icon: 'none' });
@@ -43,14 +47,16 @@ Page({
             wx.reLaunch({ url: '/pages/onboarding/index' });
             return;
         }
-        const state = (0, store_1.getState)();
-        const userName = session.userName || state.userName;
+        const userName = session.userName || '家人';
         try {
             const [menu, recipes] = await Promise.all([
                 index_1.menuModule.getWeekMenu((0, date_1.getCurrentWeekKey)()),
                 index_2.recipeModule.listRecipes(),
             ]);
-            const todayIndex = (new Date().getDay() || 7) - 1;
+            const extras = await Promise.allSettled([index_3.voteModule.getCurrent((0, date_1.getFamilyToday)(), 'dinner'), index_4.shoppingModule.getList((0, date_1.getCurrentWeekKey)())]);
+            const poll = extras[0].status === 'fulfilled' ? extras[0].value : null;
+            const shopping = extras[1].status === 'fulfilled' ? extras[1].value : null;
+            const todayIndex = (new Date(`${(0, date_1.getFamilyToday)()}T12:00:00Z`).getUTCDay() || 7) - 1;
             const day = menu.days[todayIndex] || menu.days[0];
             if (!day) {
                 this.setData({ loading: false });
@@ -92,14 +98,16 @@ Page({
                 });
             }
             this.setData({
-                familyName: session.familyName || state.familyName,
+                familyName: session.familyName || '家的饭桌',
                 userName,
                 todayText: (0, date_1.formatToday)(),
                 todayDishes,
-                pollCandidates: recipes.slice(0, 3),
-                votedRecipeId: state.votedRecipeId,
-                remainingShopping: state.shoppingItems.filter((item) => !item.checked).length,
-                shoppingStale: (0, store_1.isShoppingListStale)(),
+                pollCandidates: (poll?.poll?.candidates || []).map((entry) => (0, cloud_adapter_1.toRecipe)({ ...entry.recipeSnapshot, id: entry.recipeId, duration: 20 })),
+                votedRecipeId: poll?.currentVote?.candidateRecipeId || '',
+                remainingShopping: shopping?.items.filter((item) => !item.checked).length || 0,
+                shoppingStale: shopping?.stale || false,
+                voteError: extras[0].status === 'rejected' ? (0, app_error_1.toAppError)(extras[0].reason).message : '',
+                shoppingError: extras[1].status === 'rejected' ? (0, app_error_1.toAppError)(extras[1].reason).message : '',
                 loadError: '',
             });
         }
@@ -122,9 +130,6 @@ Page({
         wx.navigateTo({ url: '/pages/vote/index' });
     },
     openShopping() {
-        const state = (0, store_1.getState)();
-        if (!state.shoppingItems.length)
-            (0, store_1.generateShoppingList)();
         wx.navigateTo({ url: '/pages/shopping/index' });
     },
 });

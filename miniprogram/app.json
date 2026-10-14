@@ -10,7 +10,8 @@
     "pages/shopping/index",
     "pages/fridge/index",
     "pages/fridge/cook",
-    "pages/profile/index"
+    "pages/profile/index",
+    "pages/legal/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#eaf2ea",

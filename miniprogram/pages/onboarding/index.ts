@@ -17,6 +17,7 @@ Page({
     submitting: false,
     isLocal: runtimeConfig.repositoryMode === 'local',
     errorMessage: '',
+    termsAccepted: false,
   },
 
   async onLoad() {
@@ -38,6 +39,9 @@ Page({
     this.setData({ mode: event.currentTarget.dataset.mode, errorMessage: '' })
   },
 
+  onAgreementChange(event: any) { if (!this.data.submitting) this.setData({ termsAccepted: event.detail.value.includes('accepted') }) },
+  openLegal(event: any) { wx.navigateTo({ url: `/pages/legal/index?type=${event.currentTarget.dataset.type === 'terms' ? 'terms' : 'privacy'}` }) },
+
   onFamilyName(event: any) {
     if (this.data.submitting) return
     this.setData({ familyName: event.detail.value })
@@ -58,6 +62,8 @@ Page({
     this.setData({ avatarPath: event.detail.avatarUrl, avatarUrl: '' })
   },
 
+  clearAvatar() { if (!this.data.submitting) this.setData({ avatarPath: '', avatarUrl: '' }) },
+
   async uploadAvatar(tempPath: string): Promise<string> {
     if (typeof wx.cloud?.uploadFile !== 'function') return ''
     const ext = tempPath.includes('.') ? tempPath.split('.').pop() : 'jpg'
@@ -68,6 +74,7 @@ Page({
 
   async continue() {
     if (this.data.submitting) return
+    if (!this.data.termsAccepted) { wx.showToast({ title: '请先阅读并同意协议', icon: 'none' }); return }
     this.setData({ submitting: true, errorMessage: '' })
     try {
       let avatarUrl = this.data.avatarUrl
@@ -85,6 +92,7 @@ Page({
         familyName: this.data.familyName,
         inviteCode: this.data.inviteCode,
         avatarUrl,
+        termsAccepted: this.data.termsAccepted,
       })
       wx.switchTab({ url: '/pages/home/index' })
     } catch (error) {

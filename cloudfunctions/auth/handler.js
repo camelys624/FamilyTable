@@ -1,6 +1,8 @@
 'use strict'
 
 const SAFE_ERROR_CODES = new Set([
+  'CONTENT_REJECTED',
+  'FEATURE_UNAVAILABLE',
   'UNAUTHENTICATED',
   'VALIDATION_ERROR',
   'NOT_FOUND',
@@ -64,6 +66,12 @@ function createAuthHandler(repository, logger = console) {
         assertPayloadFields(payload, [])
         const data = await repository.login(identity.openid)
         return { ok: true, data, requestId }
+      }
+      if (event.action === 'auth.acceptTerms') {
+        assertPayloadFields(payload, ['version'])
+        if (typeof event.requestId !== 'string' || event.requestId.trim().length < 8 || event.requestId.trim().length > 64) throw validationError('协议确认需要有效的 requestId')
+        if (payload.version !== '2026-10-13') throw validationError('协议版本已更新，请重新打开页面')
+        return { ok: true, data: await repository.acceptTerms(identity.openid, payload.version), requestId }
       }
       if (event.action === 'auth.updateProfile') {
         if (!event.requestId || typeof event.requestId !== 'string' || event.requestId.trim().length < 8) {

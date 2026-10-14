@@ -1,5 +1,7 @@
 'use strict'
 
+const { BaseRepository, get } = require('./common')
+
 const {
   codedError,
   documentData,
@@ -47,37 +49,19 @@ function documentExists(result) {
   return result?.data?.[0] || null
 }
 
-class CloudBaseRecipeRepository {
-  constructor(cloud) {
-    this.db = cloud.database()
-  }
+class CloudBaseRecipeRepository extends BaseRepository {
+  constructor(cloud) { super(cloud) }
 
-  async getContext(openid) {
-    const userResult = await this.db.collection('users').where({ openid }).limit(1).get()
-    const user = documentExists(userResult)
-    if (!user || user.status !== 'active') throw codedError('UNAUTHENTICATED', '微信身份已失效，请重新进入小程序')
-
-    const memberResult = await this.db
-      .collection('family_members')
-      .where({ userId: user._id, status: 'active' })
-      .limit(1)
-      .get()
-    const member = documentExists(memberResult)
-    if (!member) throw codedError('FAMILY_REQUIRED', '你还没有创建或加入家庭')
-
-    return { user, member, familyId: member.familyId }
-  }
+  async getContext(openid) { return this.context(openid) }
 
   async list(openid, input) {
     const context = await this.getContext(openid)
     const where = { familyId: context.familyId, deletedAt: null }
     if (input.category) where.category = input.category
-    let query = this.db.collection('recipes').where(where)
     if (input.keyword && this.db.command) {
-      query = query.where({
-        searchName: this.db.command.gte(input.keyword).and(this.db.command.lt(`${input.keyword}\uffff`)),
-      })
+      where.searchName = this.db.command.gte(input.keyword).and(this.db.command.lt(`${input.keyword}\uffff`))
     }
+    const query = this.db.collection('recipes').where(where)
     const result = await query.orderBy('updatedAt', 'desc').limit(input.pageSize).get()
     let items = result.data || []
     if (input.keyword && !this.db.command) {
@@ -110,12 +94,8 @@ class CloudBaseRecipeRepository {
     const timestamp = now()
 
     return this.db.runTransaction(async (transaction) => {
-      const idempotencyResult = await transaction
-        .collection('idempotency_records')
-        .where({ _id: idempotencyRecordId })
-        .limit(1)
-        .get()
-      const existingIdempotency = documentExists(idempotencyResult)
+      Object.assign(context, await this.validateContext(transaction, context))
+      const existingIdempotency = await get(transaction, 'idempotency_records', idempotencyRecordId)
       if (existingIdempotency) {
         if (existingIdempotency.requestHash !== requestHashValue) {
           throw codedError('IDEMPOTENCY_CONFLICT', '同一个 requestId 不能用于不同的新增菜谱请求')
@@ -192,12 +172,8 @@ class CloudBaseRecipeRepository {
     const timestamp = now()
 
     return this.db.runTransaction(async (transaction) => {
-      const idempotencyResult = await transaction
-        .collection('idempotency_records')
-        .where({ _id: idempotencyRecordId })
-        .limit(1)
-        .get()
-      const existingIdempotency = documentExists(idempotencyResult)
+      Object.assign(context, await this.validateContext(transaction, context))
+      const existingIdempotency = await get(transaction, 'idempotency_records', idempotencyRecordId)
       if (existingIdempotency) {
         if (existingIdempotency.requestHash !== requestHashValue) {
           throw codedError('IDEMPOTENCY_CONFLICT', '同一个 requestId 不能用于不同的修改菜谱请求')
@@ -206,13 +182,8 @@ class CloudBaseRecipeRepository {
         throw codedError('REQUEST_IN_PROGRESS', '修改菜谱的请求正在处理中，请稍后重试')
       }
 
-      const recipeResult = await transaction
-        .collection('recipes')
-        .where({ _id: recipeId, familyId: context.familyId, deletedAt: null })
-        .limit(1)
-        .get()
-      const existing = documentExists(recipeResult)
-      if (!existing) throw codedError('NOT_FOUND', '这道菜已经不在菜谱簿里了')
+      const existing = await get(transaction, 'recipes', recipeId)
+      if (!existing || existing.familyId !== context.familyId || existing.deletedAt) throw codedError('NOT_FOUND', '这道菜已经不在菜谱簿里了')
 
       const updateData = {
         updatedAt: timestamp,
@@ -271,12 +242,8 @@ class CloudBaseRecipeRepository {
     const timestamp = now()
 
     return this.db.runTransaction(async (transaction) => {
-      const idempotencyResult = await transaction
-        .collection('idempotency_records')
-        .where({ _id: idempotencyRecordId })
-        .limit(1)
-        .get()
-      const existingIdempotency = documentExists(idempotencyResult)
+      Object.assign(context, await this.validateContext(transaction, context))
+      const existingIdempotency = await get(transaction, 'idempotency_records', idempotencyRecordId)
       if (existingIdempotency) {
         if (existingIdempotency.requestHash !== requestHashValue) {
           throw codedError('IDEMPOTENCY_CONFLICT', '同一个 requestId 不能用于不同的删除菜谱请求')
@@ -285,13 +252,8 @@ class CloudBaseRecipeRepository {
         throw codedError('REQUEST_IN_PROGRESS', '删除菜谱的请求正在处理中，请稍后重试')
       }
 
-      const recipeResult = await transaction
-        .collection('recipes')
-        .where({ _id: recipeId, familyId: context.familyId, deletedAt: null })
-        .limit(1)
-        .get()
-      const existing = documentExists(recipeResult)
-      if (!existing) throw codedError('NOT_FOUND', '这道菜已经不在菜谱簿里了')
+      const existing = await get(transaction, 'recipes', recipeId)
+      if (!existing || existing.familyId !== context.familyId || existing.deletedAt) throw codedError('NOT_FOUND', '这道菜已经不在菜谱簿里了')
       if (existing.createdBy !== context.user._id && !['owner', 'admin'].includes(context.member.role)) {
         throw codedError('FORBIDDEN', '只有创建者或家庭管理员可以删除这道菜')
       }

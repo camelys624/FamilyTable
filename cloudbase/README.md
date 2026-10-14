@@ -1,15 +1,17 @@
 # CloudBase 初始化说明
 
-当前仓库已包含 `auth`、`family`、`recipe`、`menu`、`fridge` 云函数和数据库索引清单，但不会写入任何真实 AppID、环境 ID 或密钥。
+当前仓库包含 `auth`、`family`、`recipe`、`menu`、`vote`、`shopping`、`preference`、`fridge` 八个云函数和数据库索引清单。AppID 和环境 ID 属于非敏感配置；密钥仅保存在云函数服务端。
+
+当前仅供个人和家人使用，`activeStage` 为 `dev`，连接现有环境 `cloud1-d3g26za1sf043b587`。不创建生产环境，不迁移或清空现有家庭数据。以后开放给其他用户时，再准备独立生产环境。
 
 首次接入顺序：
 
 1. 将 `project.config.json` 的 `appid` 替换为正式小程序 AppID。
-2. 创建独立的 `dev`、`test`、`prod` CloudBase 环境。
+2. 个人使用可复用当前开发环境；对外发布时再创建独立的生产环境。
 3. 按 `indexes.json` 创建 14 个集合和索引，集合权限设置为客户端不可直接读写。
-4. 在 `miniprogram/config/environments.ts` 中填写目标环境 ID，并把 `activeStage` 切换到 `test` 或 `prod`；生产 profile 不允许使用 local repository。
+4. 在 `miniprogram/config/environments.ts` 中填写目标环境 ID；当前保持 `activeStage = 'dev'`，测试和生产配置保留未配置占位符。生产 profile 不允许使用 local repository。
 5. 将 `project.config.json` 的 `appid` 替换为正式小程序 AppID；运行时会拒绝 `touristappid` 连接 CloudBase。
-6. 在微信开发者工具中按 `auth`、`family`、`recipe`、`menu`、`fridge` 顺序分别上传并部署，部署时安装云端依赖。`fridge` 的 AI 建议需先在云开发控制台开通大模型，再在该云函数的环境变量中设置 `FRIDGE_AI_MODEL`（可选 `FRIDGE_AI_PROVIDER`，默认 `cloudbase`；`FRIDGE_AI_TIMEOUT_MS`，默认 20000），并把函数超时调到 30 秒以上；未配置时建议接口返回 `FEATURE_UNAVAILABLE`，库存与做菜功能照常可用。
+6. 在微信开发者工具中部署八个云函数，部署时安装云端依赖。普通业务函数建议超时 10 秒，`recipe` 和 `fridge` 至少 30 秒。`fridge` 的 AI 建议需先在云开发控制台开通大模型，再在该云函数的环境变量中设置 `FRIDGE_AI_MODEL`（可选 `FRIDGE_AI_PROVIDER`，默认 `cloudbase`；`FRIDGE_AI_TIMEOUT_MS`，默认 20000）；未配置时建议接口返回 `FEATURE_UNAVAILABLE`，库存与做菜功能照常可用。
 7. 先在 `dev` 或 `test` 验证首次登录、重复登录、创建家庭、菜谱新增/编辑、周菜单查询/添加/移除、冰箱录入/做菜消耗/报损/AI 建议、重复 requestId 和版本冲突。
 
 环境 ID 也可记录在根目录 `.env`（模板见 `.env.example`）供发布脚本读取，但小程序运行时仍需将非敏感配置编译进 `environments.ts`。AppSecret、服务账号凭据和数据库管理密钥不进入小程序配置。
@@ -17,5 +19,7 @@
 `recipe` 云函数的 AI 食材整理通过 OpenAI 兼容接口调用,需要在 CloudBase 服务端配置 `AI_API_KEY`、`AI_BASE_URL` 和 `AI_MODEL`。`AI_BASE_URL` 必须使用 HTTPS,例如腾讯混元的 `https://api.hunyuan.cloud.tencent.com/v1`;请求会访问 `${AI_BASE_URL}/chat/completions` 并使用 Bearer API Key 认证。服务商必须支持 `messages`、`tools`、`tool_choice` 和 OpenAI 风格的 `tool_calls`。这些值只进入云函数环境变量,不进入小程序包或 Git。未配置时,页面保留手动编辑并提示 AI 暂不可用。
 
 索引清单是版本化的声明文件。实际控制台或 CLI 创建结果必须与其名称、唯一性、字段顺序一致。
+
+开发环境检查：`node scripts/cloudbase/verify-release.js --development`。内容安全检查配置见各函数 `config.json`；调用失败时拒绝保存共享内容。数据库规则文件见 `database-security-rules.json`，需在控制台逐集合核对应用，不能以本地文件存在代替云端验收。投票、采购单和个人偏好已经接入云端适配器，新增函数部署前相应页面会提示未部署，不会显示演示数据。完整准备与验收见 [上线准备与验收](../docs/上线准备与验收.md)。
 
 家庭邀请与加入已接通：需重新部署 `family` 云函数，并补充 `families.idx_families_invite_status` 索引。务必确认 `idempotency_records` 等集合禁止客户端直接读写，邀请成功回执包含邀请码，仅可通过管理员身份调用云函数重放。使用方式与验收见 [家庭邀请实现与验收](../docs/家庭邀请实现与验收.md)。

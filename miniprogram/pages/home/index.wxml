@@ -23,9 +23,9 @@
           <text class="candidate-name">{{item.name}}</text><text class="candidate-vote" wx:if="{{votedRecipeId === item.id}}">✓ 已投</text>
         </view>
       </view>
-      <view class="empty-vote" wx:else>先记几道菜，再请全家投票。</view>
+      <view class="empty-vote" wx:else>{{voteError || '还没有晚餐投票，管理员可发起。'}}</view>
       <view class="design-link" bindtap="openVote">看票数 <text class="design-chevron">›</text></view>
     </view>
-    <view class="shopping-card paper-card" bindtap="openShopping"><kitchen-art kind="shopping" art-size="small-illustration" size="100" /><view class="shopping-copy"><text class="shopping-title">本周采购单</text><text class="shopping-note">{{shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text></view><view class="shopping-action">去看看 <text>›</text></view></view>
+    <view class="shopping-card paper-card" bindtap="openShopping"><kitchen-art kind="shopping" art-size="small-illustration" size="100" /><view class="shopping-copy"><text class="shopping-title">本周采购单</text><text class="shopping-note">{{shoppingError ? shoppingError : shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text></view><view class="shopping-action">去看看 <text>›</text></view></view>
   </block>
 </view>

@@ -7,6 +7,8 @@ const {
 } = require('./ingredient-assistant')
 
 const SAFE_ERROR_CODES = new Set([
+  'CONTENT_REJECTED',
+  'FEATURE_UNAVAILABLE',
   'UNAUTHENTICATED',
   'FAMILY_REQUIRED',
   'NOT_FAMILY_MEMBER',

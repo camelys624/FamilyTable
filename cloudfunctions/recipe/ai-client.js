@@ -51,7 +51,23 @@ const EXTRACTION_TOOL = {
 
 function assistantError(code, message, cause) {
   const error = Object.assign(new Error(message), { code })
-  if (cause) error.providerCause = String(cause.message || cause).slice(0, 300)
+  if (cause) {
+    const status = Number(cause.status)
+    const allowedNetworkCodes = ['ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED']
+    const allowedParameters = ['model', 'temperature', 'top_p', 'tools', 'tool_choice', 'messages', 'max_tokens', 'stream']
+    const parameter = cause.param || cause.error?.param
+    let reason = 'provider_error'
+    if (['MODULE_NOT_FOUND', 'ERR_REQUIRE_ESM'].includes(cause.code)) reason = 'sdk_dependency_error'
+    else if (allowedNetworkCodes.includes(cause.code) || allowedNetworkCodes.includes(cause.cause?.code)) reason = 'network_error'
+    else if (cause.name === 'APIConnectionTimeoutError') reason = 'timeout'
+    else if (cause.name === 'APIConnectionError') reason = 'network_error'
+    else if (cause.name === 'TypeError') reason = 'client_runtime_error'
+    error.details = {
+      check: 'ingredient_assistant', reason,
+      ...(Number.isInteger(status) && status >= 100 && status <= 599 ? { httpStatus: status } : {}),
+      ...(allowedParameters.includes(parameter) ? { parameter } : {}),
+    }
+  }
   return error
 }
 
@@ -145,7 +161,6 @@ function createOpenAICompatibleIngredientAssistant(env = process.env, createClie
           model: configured.model,
           stream: false,
           temperature: 0,
-          top_p: 0,
           messages: [
             {
               role: 'system',

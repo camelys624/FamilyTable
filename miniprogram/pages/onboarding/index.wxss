@@ -21,3 +21,5 @@
 .privacy-note { display: block; margin-top: 20rpx; color: var(--muted); text-align: center; font-size: 20rpx; line-height: 1.6; }
 .onboarding .avatar-picker { width: 84rpx; min-width: 84rpx; max-width: 84rpx; flex: 0 0 84rpx; box-sizing: border-box; } .onboarding .continue-button { width: 100%; min-width: 100%; max-width: 100%; box-sizing: border-box; }
 .form-error { display: block; margin: 18rpx 0; color: #b3614c; font-size: 24rpx; line-height: 1.6; }
+.agreement-link { color: var(--leaf); text-decoration: underline; padding: 8rpx 4rpx; }
+.privacy-note checkbox { transform: scale(0.75); transform-origin: center; }

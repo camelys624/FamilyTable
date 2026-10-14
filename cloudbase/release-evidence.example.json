@@ -1,0 +1,17 @@
+{
+  "appid": "wx859aee6af4c1f636",
+  "env": "__PRODUCTION_ENV_ID__",
+  "verifiedBy": "",
+  "verifiedAt": "",
+  "cloudFunctionsDeployed": false,
+  "indexesVerified": false,
+  "databaseServerOnly": false,
+  "storageRulesVerified": false,
+  "privacyDeclarationVerified": false,
+  "contentSafetyVerified": false,
+  "backupRestoreVerified": false,
+  "iosPreviewVerified": false,
+  "androidPreviewVerified": false,
+  "twoAccountFlowVerified": false,
+  "mainPackageBytes": 0
+}

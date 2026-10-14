@@ -32,6 +32,8 @@ function pageHarness(route, overrides = {}) {
     '../../config/runtime': { runtimeConfig: { repositoryMode: 'cloud' } },
     '../../modules/session/index': session,
     '../../modules/family/index': { familyModule: family },
+    '../../modules/preference/index': { preferenceModule: { getMine: async () => ({ spicyLevel: 1, avoidFoods: [], notes: '' }) } },
+    '../../utils/write-intent': require(path.join(root, 'utils/write-intent.js')),
     '../../utils/app-error': { toAppError },
     '../../utils/request-id': { createRequestId: () => `req_page_${++sequence}` },
   }
@@ -142,11 +144,12 @@ test('cloud onboarding joins by code and recovers from a lost response without c
         return {}
       }
       if (action === 'auth.login') return { user: { displayName: '爸爸' }, family: joined ? { name: '真实饭桌' } : null, onboardingRequired: !joined }
+      if (action === 'auth.acceptTerms') return {}
       if (action === 'family.current') return { family: { name: '真实饭桌' }, currentMember: { displayName: '爸爸' }, members: [{ displayName: '妈妈' }, { displayName: '爸爸' }] }
       assert.fail(`unexpected ${action}`)
     },
   })
-  const input = { mode: 'join', userName: ' 爸爸 ', inviteCode: ' abcd2345 ' }
+  const input = { mode: 'join', userName: ' 爸爸 ', inviteCode: ' abcd2345 ', termsAccepted: true }
   await assert.rejects(adapter.completeOnboarding(input), { code: 'NETWORK_ERROR' })
   const session = await adapter.completeOnboarding(input)
   assert.equal(requests[0].requestId, requests[1].requestId)
@@ -164,6 +167,7 @@ test('onboarding freezes pending form input, preserves server errors and navigat
     completeOnboarding: async () => { calls++; return new Promise((_, reject) => { rejectJoin = reject }) },
   } })
   harness.page.data.mode = 'join'
+  harness.page.data.termsAccepted = true
   harness.page.data.inviteCode = 'ABCD2345'
   const pending = harness.page.continue()
   harness.page.onInviteCode({ detail: { value: 'ZZZZ9999' } })

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CloudSessionAdapter = void 0;
 const request_id_1 = require("../../utils/request-id");
+const legal_1 = require("../../config/legal");
 const validate_1 = require("./validate");
 class CloudSessionAdapter {
     constructor(client) {
@@ -36,6 +37,7 @@ class CloudSessionAdapter {
         if (this.onboardingRequest?.key !== key)
             this.onboardingRequest = { key, requestId: (0, request_id_1.createRequestId)() };
         const requestId = this.onboardingRequest.requestId;
+        await this.client.call('auth', 'auth.acceptTerms', { version: legal_1.legalConfig.version }, `${requestId}_terms`);
         if (input.avatarUrl) {
             await this.client.call('auth', 'auth.updateProfile', {
                 displayName: normalized.userName,
