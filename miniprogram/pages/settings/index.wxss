@@ -1,0 +1,26 @@
+.settings-heading { margin: 12rpx 0 30rpx; }
+.settings-heading .page-title { font-size: 48rpx; margin: 10rpx 0; }
+.family-info-card { padding: 22rpx 24rpx; margin-bottom: 20rpx; }
+.family-info-card .design-heading > view { flex: 1; min-width: 0; }
+.family-info-card .design-note { margin-top: 8rpx; overflow-wrap: anywhere; }
+button.edit-family-button { display: flex; align-items: center; justify-content: center; flex: none; width: 152rpx; min-height: 66rpx; margin: 0; padding: 10rpx 18rpx; box-sizing: border-box; border-radius: 16rpx; background: #eef3e9; color: var(--ink); font-size: 23rpx; line-height: 1.5; }
+.family-editor { border-top: 1rpx solid var(--line); padding-top: 20rpx; }
+.field-label { font-size: 26rpx; font-weight: 650; }
+.family-editor input { margin-top: 14rpx; padding: 0 18rpx; height: 82rpx; border: 1rpx solid var(--line); border-radius: 16rpx; background: #fffefb; font-size: 27rpx; }
+.family-edit-error { display: block; margin-top: 14rpx; color: #b3614c; font-size: 24rpx; line-height: 1.6; }
+.family-edit-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
+.family-edit-actions button { flex: 1; margin: 0; padding: 16rpx 12rpx; border-radius: 18rpx; font-size: 25rpx; line-height: 1.5; }
+.family-edit-cancel { background: #eef3e9; color: var(--ink); }
+.family-edit-save { background: var(--ink); color: #fff; }
+.family-error { display: flex; align-items: center; gap: 20rpx; padding: 24rpx; margin-bottom: 20rpx; color: #b3614c; font-size: 25rpx; }
+.family-error button { flex: none; margin: 0; font-size: 23rpx; color: var(--ink); background: #eef3e9; }
+.settings-list { padding: 0 24rpx; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; min-height: 106rpx; gap: 20rpx; padding: 14rpx 0; box-sizing: border-box; font-size: 25rpx; }
+.settings-row + .settings-row { border-top: 1rpx solid #e7eee5; }
+.settings-label { display: block; color: var(--ink); }
+.settings-row .design-note { margin-top: 8rpx; font-size: 22rpx; }
+.settings-value { flex: none; color: #347a5d; font-size: 23rpx; }
+button.settings-row { width: 100%; margin: 0; background: transparent; border-radius: 0; line-height: 1.6; text-align: left; }
+button.settings-row::after { border: 0; }
+.settings-row.danger { color: #b3614c; }
+.version-text { display: block; text-align: center; margin-top: 28rpx; font-size: 20rpx; color: #8c988f; }

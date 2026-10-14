@@ -7,7 +7,7 @@ const { CloudBaseFamilyRepository } = require('./repository')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const handler = createFamilyHandler(guardRepository(new CloudBaseFamilyRepository(cloud), cloud, {"create":{"fields":["name","displayName"]},"join":{"fields":["displayName"]}}), console)
+const handler = createFamilyHandler(guardRepository(new CloudBaseFamilyRepository(cloud), cloud, { create: { fields: ['name', 'displayName'] }, join: { fields: ['displayName'] }, update: { fields: ['name'] } }), console)
 
 exports.main = async (event) => {
   const context = cloud.getWXContext()

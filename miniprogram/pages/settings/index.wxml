@@ -1,0 +1,21 @@
+<view class="page-shell design-page settings-page">
+  <view class="settings-heading"><text class="eyebrow">把家的日常安排好</text><view class="page-title">设置</view><text class="design-note">饭桌信息、每周安排与隐私。</text></view>
+  <view wx:if="{{familyError}}" class="family-error paper-card"><text>{{familyError}}</text><button bindtap="loadFamily" loading="{{loading}}" disabled="{{loading}}">重新加载</button></view>
+  <view wx:if="{{!familyError}}" class="family-info-card paper-card">
+    <view class="design-heading"><view><text class="section-title">饭桌信息</text><text class="design-note">{{loading ? '正在读取饭桌信息…' : familyName}}</text></view><button wx:if="{{canEditFamily && !familyEditorOpen}}" class="edit-family-button" bindtap="openFamilyEditor" disabled="{{loading}}">修改名称</button></view>
+    <view wx:if="{{familyEditorOpen}}" class="family-editor">
+      <text class="field-label">饭桌名称</text>
+      <input value="{{familyDraftName}}" maxlength="40" bindinput="onFamilyNameInput" bindconfirm="saveFamilyName" confirm-type="done" placeholder="给家的饭桌起个名字" disabled="{{familySaving || familyPending || !canEditFamily}}" />
+      <text class="design-note">1～40 个字，保存后家人会看到新名称。</text>
+      <text wx:if="{{familyEditError}}" class="family-edit-error">{{familyEditError}}</text>
+      <view class="family-edit-actions"><button class="family-edit-cancel" bindtap="closeFamilyEditor" disabled="{{familySaving || familyPending}}">取消</button><button class="family-edit-save" bindtap="saveFamilyName" loading="{{familySaving}}" disabled="{{familySaving || loading || !canEditFamily}}">{{familyPending ? '重试上次保存' : '保存名称'}}</button></view>
+    </view>
+    <text wx:if="{{!canEditFamily && !loading}}" class="design-note">饭桌信息由家长修改。</text>
+  </view>
+  <view class="settings-list paper-card">
+    <view class="settings-row"><view><text class="settings-label">每周从周一开始</text><text class="design-note">周菜单按周一至周日安排。</text></view><text class="settings-value">已开启</text></view>
+    <button class="settings-row legal-button" bindtap="openLegal"><text class="settings-label">隐私政策与用户协议</text><text class="design-chevron">›</text></button>
+    <button wx:if="{{isLocal}}" class="settings-row danger" bindtap="resetDemo"><text>重置体验数据</text><text class="design-chevron">›</text></button>
+  </view>
+  <text class="version-text">家常 Family Table · MVP 1.0</text>
+</view>

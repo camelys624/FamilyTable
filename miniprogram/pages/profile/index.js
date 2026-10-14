@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const store_1 = require("../../services/store");
 const runtime_1 = require("../../config/runtime");
 const index_1 = require("../../modules/family/index");
 const index_2 = require("../../modules/session/index");
@@ -57,7 +56,7 @@ Page({
     async loadFamily() {
         if (this.data.loading || this.data.inviting)
             return;
-        this.setData({ loading: true, familyError: '', canInvite: false });
+        this.setData({ loading: true, familyError: '' });
         try {
             const session = await (0, index_2.ensureSession)();
             if (!session.onboarded) {
@@ -67,8 +66,8 @@ Page({
             const current = await index_1.familyModule.getCurrentFamily();
             const tones = ['member-red', 'member-blue', 'member-green'];
             const members = current.members.map((member, index) => ({
-                id: member.id, name: member.displayName, initial: member.displayName.slice(0, 1),
-                role: member.role === 'owner' ? '管理员' : '家庭成员',
+                id: member.id, name: member.displayName, initial: Array.from(member.displayName)[0] || '家',
+                role: member.role === 'owner' ? '家长' : '家庭成员',
                 tone: tones[index % tones.length], isMe: member.id === current.currentMember.id,
             }));
             const keepCode = this.data.inviteExpiresAt === current.invitation.expiresAt && current.invitation.active;
@@ -81,7 +80,7 @@ Page({
         }
         catch (error) {
             const appError = (0, app_error_1.toAppError)(error);
-            this.setData({ familyName: '', members: [], familyMeta: '', inviteCode: '', familyError: appError.message });
+            this.setData({ familyName: '', members: [], familyMeta: '', inviteCode: '', canInvite: false, familyError: appError.message });
             if (['UNAUTHENTICATED', 'FAMILY_REQUIRED', 'NOT_FAMILY_MEMBER'].includes(appError.code)) {
                 (0, index_2.clearSession)();
                 wx.reLaunch({ url: '/pages/onboarding/index' });
@@ -99,6 +98,9 @@ Page({
             return;
         const spicyLevel = Number(event.detail.value);
         this.setData({ spicyLevel, spicyLabel: this.getSpicyLabel(spicyLevel) });
+    },
+    onSpicySelect(event) {
+        this.onSpicyChange({ detail: { value: Number(event.currentTarget.dataset.level) } });
     },
     onAvoidInput(event) {
         if (this.data.preferenceLoading || this.data.preferenceSaving || this.data.preferencePending || this.data.preferenceError)
@@ -122,7 +124,7 @@ Page({
             this.setData({ preferenceSaving: false });
         }
     },
-    openLegal() { wx.navigateTo({ url: '/pages/legal/index?type=privacy' }); },
+    openSettings() { wx.navigateTo({ url: '/pages/settings/index' }); },
     copyInviteCode() {
         if (!this.data.inviteCode || Date.parse(this.data.inviteExpiresAt) <= Date.now()) {
             this.setData({ inviteCode: '', invitationActive: false });
@@ -187,23 +189,6 @@ Page({
             confirmText: '更换', confirmColor: '#18332f',
             success: (result) => { if (result.confirm)
                 void this.createInvitation(); },
-        });
-    },
-    resetDemo() {
-        if (!this.data.isLocal)
-            return;
-        wx.showModal({
-            title: '重置体验数据？',
-            content: '新增菜谱、菜单调整和采购勾选都会恢复为初始状态。',
-            confirmColor: '#d94f3d',
-            confirmText: '确认重置',
-            success: (result) => {
-                if (result.confirm) {
-                    (0, store_1.resetDemo)();
-                    (0, index_2.clearSession)();
-                    wx.reLaunch({ url: '/pages/onboarding/index' });
-                }
-            },
         });
     },
 });

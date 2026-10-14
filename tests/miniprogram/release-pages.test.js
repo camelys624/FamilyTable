@@ -24,9 +24,10 @@ function harness(route, modules = {}) {
     '../../services/store': { resetDemo() {} },
     '../../modules/recipe/cloud-adapter': { toRecipe },
     '../../modules/recipe/index': { recipeModule: { listRecipes: async () => [] } },
+    '../../modules/menu/index': { menuModule: { getWeekMenu: async () => ({ days: Array.from({ length: 7 }, () => ({ breakfast: [], lunch: [], dinner: [] })) }) } },
     '../../modules/vote/index': { voteModule: vote }, '../../modules/shopping/index': { shoppingModule: shopping }, '../../modules/preference/index': { preferenceModule: preference },
     '../../modules/family/index': { familyModule: { getCurrentFamily: async () => ({ family: { name: '真实家庭' }, currentMember: { id: 'member', displayName: '妈妈', role: 'owner' }, members: [{ id: 'member', displayName: '妈妈', role: 'owner' }], invitation: { active: false, expiresAt: '' } }) } },
-    '../../modules/session/index': { ensureSession: async () => ({ onboarded: true }), clearSession() {}, completeOnboarding: async () => {} },
+    '../../modules/session/index': { ensureSession: async () => ({ onboarded: true, familyName: '缓存旧名称' }), clearSession() {}, completeOnboarding: async () => {} },
   }
   vm.runInNewContext(fs.readFileSync(path.join(root, route), 'utf8'), { exports: {}, require(id) { assert.ok(mocks[id], `unexpected ${id}`); return mocks[id] }, Page(options) { page = options }, wx: { showToast: (options) => toasts.push(options), navigateTo: (options) => navigation.push(options.url), reLaunch: (options) => navigation.push(options.url), showModal: (options) => modals.push(options), stopPullDownRefresh() {} } })
   page.data = structuredClone(page.data)
@@ -124,13 +125,18 @@ test('profile loads private cloud preferences and retries exactly the saved inte
   await h.page.onShow()
   assert.equal(h.page.data.avoidFood, '花生')
   assert.equal(h.page.data.spicyLevel, 2)
+  h.page.onSpicySelect({ currentTarget: { dataset: { level: '3' } } })
+  assert.equal(h.page.data.spicyLevel, 3)
   await h.page.saveAvoidFood()
   h.page.onAvoidInput({ detail: { value: '香菜' } })
+  h.page.onSpicySelect({ currentTarget: { dataset: { level: '0' } } })
+  assert.equal(h.page.data.spicyLevel, 3)
   assert.equal(h.page.data.avoidFood, '花生')
   await h.page.saveAvoidFood()
   assert.equal(requests[0].requestId, requests[1].requestId)
   assert.deepEqual(JSON.parse(JSON.stringify(requests[1].input.avoidFoods)), ['花生'])
   assert.equal(requests[1].input.notes, '原有备注')
+  assert.equal(requests[1].input.spicyLevel, 3)
 })
 
 test('new users cannot submit onboarding until explicitly accepting the agreements', async () => {
@@ -141,4 +147,12 @@ test('new users cannot submit onboarding until explicitly accepting the agreemen
   assert.match(h.toasts[0].title, /同意/)
   h.page.onAgreementChange({ detail: { value: ['accepted'] } })
   assert.equal(h.page.data.termsAccepted, true)
+})
+
+test('home reads the latest shared family name instead of its stale login snapshot', async () => {
+  const h = harness('pages/home/index.js')
+  await h.page.onShow()
+  assert.equal(h.page.data.familyName, '真实家庭')
+  assert.equal(h.page.data.loadError, '')
+  assert.equal(h.page.data.loading, false)
 })

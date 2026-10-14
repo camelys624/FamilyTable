@@ -5,8 +5,9 @@ const index_2 = require("../../modules/recipe/index");
 const date_1 = require("../../utils/date");
 const index_3 = require("../../modules/vote/index");
 const index_4 = require("../../modules/shopping/index");
+const index_5 = require("../../modules/family/index");
 const cloud_adapter_1 = require("../../modules/recipe/cloud-adapter");
-const index_5 = require("../../modules/session/index");
+const index_6 = require("../../modules/session/index");
 const app_error_1 = require("../../utils/app-error");
 Page({
     data: {
@@ -32,7 +33,7 @@ Page({
     },
     async loadData() {
         this.setData({ loading: true });
-        const session = await (0, index_5.ensureSession)().catch((error) => {
+        const session = await (0, index_6.ensureSession)().catch((error) => {
             const message = (0, app_error_1.toAppError)(error).message;
             this.setData({ loadError: message });
             wx.showToast({ title: message, icon: 'none' });
@@ -49,9 +50,10 @@ Page({
         }
         const userName = session.userName || '家人';
         try {
-            const [menu, recipes] = await Promise.all([
+            const [menu, recipes, currentFamily] = await Promise.all([
                 index_1.menuModule.getWeekMenu((0, date_1.getCurrentWeekKey)()),
                 index_2.recipeModule.listRecipes(),
+                index_5.familyModule.getCurrentFamily(),
             ]);
             const extras = await Promise.allSettled([index_3.voteModule.getCurrent((0, date_1.getFamilyToday)(), 'dinner'), index_4.shoppingModule.getList((0, date_1.getCurrentWeekKey)())]);
             const poll = extras[0].status === 'fulfilled' ? extras[0].value : null;
@@ -98,7 +100,7 @@ Page({
                 });
             }
             this.setData({
-                familyName: session.familyName || '家的饭桌',
+                familyName: currentFamily.family.name,
                 userName,
                 todayText: (0, date_1.formatToday)(),
                 todayDishes,

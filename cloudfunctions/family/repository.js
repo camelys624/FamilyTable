@@ -32,6 +32,7 @@ function familyView(family) {
   return {
     id: family._id,
     name: family.name,
+    infoVersion: Number.isInteger(family.infoVersion) ? family.infoVersion : 0,
     timezone: family.timezone,
     weekStartsOn: family.weekStartsOn,
     status: family.status,
@@ -215,6 +216,32 @@ class CloudBaseFamilyRepository {
   async findMembership(userId) {
     const result = await this.db.collection('family_members').where({ userId, status: 'active' }).limit(1).get()
     return result.data[0] || null
+  }
+
+  async update(openid, input, requestId) {
+    const user = await this.findUser(openid)
+    const legacyMember = await this.findMembership(user._id)
+    return this.db.runTransaction(async (transaction) => {
+      await assertActiveUser(transaction, user)
+      const member = await activeMembership(transaction, user._id, legacyMember)
+      if (!member) throw codedError('FAMILY_REQUIRED', '你还没有创建或加入家庭')
+      const family = await getDocument(transaction, 'families', member.familyId)
+      if (!family || family.status !== 'active') throw codedError('NOT_FAMILY_MEMBER', '当前饭桌已不可访问')
+      if (member.role !== 'owner') throw codedError('FORBIDDEN', '只有饭桌管理员可以修改饭桌信息')
+      const receipt = await readReceipt(transaction, user._id, 'family.update', requestId, input)
+      if (receipt.response) {
+        if (receipt.response.family.id !== family._id) throw codedError('NOT_FAMILY_MEMBER', '原来的饭桌成员关系已失效')
+        return receipt.response
+      }
+      const version = Number.isInteger(family.infoVersion) ? family.infoVersion : 0
+      if (version !== input.expectedVersion) throw codedError('VERSION_CONFLICT', '饭桌信息已更新，请重新加载后修改')
+      const now = new Date()
+      const updated = { ...family, name: input.name, infoVersion: version + 1, updatedAt: now, updatedBy: user._id }
+      await transaction.collection('families').doc(family._id).update({ data: { name: updated.name, infoVersion: updated.infoVersion, updatedAt: now, updatedBy: user._id } })
+      const response = { family: familyView(updated) }
+      await writeReceipt(transaction, user, member, 'family.update', requestId, receipt, response, now)
+      return response
+    })
   }
 
   async invite(openid, input, requestId) {

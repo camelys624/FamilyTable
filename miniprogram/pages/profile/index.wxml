@@ -1,8 +1,62 @@
 <view class="page-shell design-page profile-page">
-  <view class="design-hero family-banner"><view class="design-copy"><text class="eyebrow">欢迎回家</text><view class="page-title">{{familyName || '家的小饭桌'}}</view><text class="design-note">{{loading ? '正在打开家庭…' : familyMeta}}</text><text wx:if="{{isLocal}}" class="demo-note">本地体验家庭</text></view><view class="hero-picture"><kitchen-art kind="table" art-size="hero-illustration" size="228" /></view></view>
-  <view wx:if="{{familyError}}" class="family-error paper-card"><text>{{familyError}}</text><button bindtap="loadFamily" loading="{{loading}}" disabled="{{loading}}">重新加载</button></view>
-  <view wx:if="{{inviteCode}}" class="invitation-card paper-card"><view class="invite-chip" bindtap="copyInviteCode"><text>{{isLocal ? '体验邀请码' : '家庭邀请码'}} <text class="invite-code">{{inviteCode}}</text></text><text class="copy-label">复制</text></view><text class="design-note">{{inviteExpiryLabel}}（北京时间）</text><text class="invite-guide">家人打开小程序 → 选择「加入家庭」→ 输入邀请码。</text><button wx:if="{{!isLocal}}" class="rotate-invite" bindtap="rotateInvitation" disabled="{{inviting}}">更换邀请码</button></view>
-  <view wx:if="{{!familyError}}" class="member-card paper-card"><view class="design-heading"><view><text class="section-title">饭桌上的家人</text><text class="design-note">{{isLocal ? '本地体验成员示例' : '同一个饭桌，共享菜谱和冰箱。'}}</text></view><button wx:if="{{canInvite}}" class="invite-button" bindtap="addMember" loading="{{inviting}}" disabled="{{inviting || loading}}">{{inviting ? '生成中' : (inviteCode ? '复制邀请' : (invitationActive ? '生成新码' : '＋ 邀请'))}}</button></view><view wx:for="{{members}}" wx:key="id" class="member-row"><view class="member-avatar {{item.tone}}">{{item.initial}}</view><view class="member-copy"><text class="member-name">{{item.name}}{{item.isMe ? '（我）' : ''}}</text><text class="member-note">常在一起吃饭</text></view><text class="design-badge {{item.role === '管理员' ? 'amber' : ''}}">{{item.role}}</text></view><text wx:if="{{!canInvite && !loading}}" class="design-note">邀请更多家人，请联系家庭管理员。</text></view>
-  <view wx:if="{{preferenceError}}" class="family-error paper-card"><text>{{preferenceError}}</text><button wx:if="{{preferencePending}}" bindtap="saveAvoidFood" disabled="{{preferenceSaving}}">重试上次保存</button><button wx:else bindtap="loadPreferences" disabled="{{preferenceLoading}}">重新加载</button></view><view class="preference-card paper-card"><view class="design-heading"><view><text class="section-title">我的口味档案</text><text class="design-note">{{isLocal ? '本地体验口味档案。' : '仅当前账号可查看详细口味。'}}</text></view><kitchen-art kind="chilli" art-size="small-illustration" size="100" /></view><view class="preference-row"><text class="preference-label">吃辣程度</text><text class="design-badge amber">{{spicyLabel}}</text></view><slider min="0" max="3" step="1" value="{{spicyLevel}}" activeColor="#d9a43d" backgroundColor="#e1e7df" block-color="#18332f" block-size="20" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}" bindchange="onSpicyChange" /><view class="spicy-labels"><text>不辣</text><text>微辣</text><text>中辣</text><text>很辣</text></view><view class="avoid-field"><text class="preference-label">不爱吃／忌口</text><view class="avoid-input-row"><input disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}" value="{{avoidFood}}" bindinput="onAvoidInput" confirm-type="done" bindconfirm="saveAvoidFood" placeholder="例如：香菜、花生" /><button bindtap="saveAvoidFood" loading="{{preferenceSaving}}" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}">保存</button></view></view></view>
-  <view class="settings-list paper-card"><view class="settings-row"><text>每周从周一开始</text><text class="settings-value">已开启</text></view><view class="settings-row" bindtap="openLegal"><text>隐私政策与用户协议</text><text class="design-chevron">›</text></view><view wx:if="{{isLocal}}" class="settings-row danger" bindtap="resetDemo"><text>重置体验数据</text><text class="design-chevron">›</text></view></view><text class="version-text">家常 Family Table · MVP 1.0</text>
+  <view class="family-banner">
+    <view class="family-heading">
+      <text class="eyebrow">欢迎回家</text>
+      <view class="family-title">{{familyName || '家的小饭桌'}}</view>
+      <text class="family-caption">{{familyMeta || (loading ? '正在打开家庭…' : '和家人一起，好好吃饭')}}</text>
+      <text wx:if="{{isLocal}}" class="demo-note">本地体验家庭</text>
+    </view>
+    <view class="family-art"><kitchen-art kind="table" size="182" /></view>
+  </view>
+
+  <view wx:if="{{familyError}}" class="family-error paper-card">
+    <text>{{familyError}}</text>
+    <button bindtap="loadFamily" loading="{{loading}}" disabled="{{loading}}">重新加载</button>
+  </view>
+
+  <view wx:if="{{!familyError}}" class="member-card paper-card">
+    <view class="card-heading">
+      <view><text class="card-title">饭桌上的家人</text><text class="card-caption">共享菜谱、菜单和冰箱</text></view>
+      <button wx:if="{{canInvite}}" class="invite-button" bindtap="addMember" loading="{{inviting}}" disabled="{{inviting || loading}}">{{inviting ? '生成中' : (inviteCode ? '复制邀请' : '＋ 邀请家人')}}</button>
+    </view>
+    <view class="member-list">
+      <view wx:for="{{members}}" wx:key="id" class="member-row">
+        <view class="member-avatar {{item.tone}}">{{item.initial}}</view>
+        <view class="member-copy"><text class="member-name">{{item.name}}</text><text wx:if="{{item.isMe}}" class="me-label">我</text></view>
+        <text class="member-role {{item.role === '家长' ? 'parent-role' : ''}}">{{item.role}}</text>
+      </view>
+    </view>
+    <text wx:if="{{!canInvite && !loading}}" class="member-guide">邀请更多家人，请联系家长。</text>
+    <text wx:if="{{loading && !members.length}}" class="member-guide">正在读取家人成员…</text>
+  </view>
+
+  <view wx:if="{{inviteCode}}" class="invitation-card paper-card">
+    <view class="invite-chip" bindtap="copyInviteCode"><view><text class="card-caption">{{isLocal ? '体验邀请码' : '家庭邀请码'}}</text><text class="invite-code">{{inviteCode}}</text></view><text class="copy-label">复制邀请码</text></view>
+    <text class="invite-guide">家人打开小程序，选择「加入家庭」后输入邀请码。</text>
+    <view class="invite-footer"><text class="card-caption">{{inviteExpiryLabel}}（北京时间）</text><button wx:if="{{!isLocal}}" class="rotate-invite" bindtap="rotateInvitation" disabled="{{inviting}}">更换</button></view>
+  </view>
+
+  <view class="preference-card paper-card">
+    <view class="card-heading preference-heading"><text class="card-title">我的口味</text><text class="private-label">仅自己可见</text></view>
+    <view wx:if="{{preferenceError}}" class="preference-error"><text>{{preferenceError}}</text><button wx:if="{{!preferencePending}}" bindtap="loadPreferences" disabled="{{preferenceLoading}}">重新加载</button></view>
+    <view class="preference-field">
+      <text class="field-label">吃辣程度</text>
+      <view class="spicy-options">
+        <button class="spicy-option {{spicyLevel === 0 ? 'selected' : ''}}" data-level="0" bindtap="onSpicySelect" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}">不辣</button>
+        <button class="spicy-option {{spicyLevel === 1 ? 'selected' : ''}}" data-level="1" bindtap="onSpicySelect" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}">微辣</button>
+        <button class="spicy-option {{spicyLevel === 2 ? 'selected' : ''}}" data-level="2" bindtap="onSpicySelect" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}">中辣</button>
+        <button class="spicy-option {{spicyLevel === 3 ? 'selected' : ''}}" data-level="3" bindtap="onSpicySelect" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}">很辣</button>
+      </view>
+    </view>
+    <view class="preference-field avoid-field">
+      <text class="field-label">不爱吃 / 忌口</text>
+      <input class="avoid-input" disabled="{{preferenceLoading || preferenceSaving || preferencePending || preferenceError}}" value="{{avoidFood}}" bindinput="onAvoidInput" confirm-type="done" bindconfirm="saveAvoidFood" placeholder="例如：香菜、花生" />
+    </view>
+    <button class="save-preference" bindtap="saveAvoidFood" loading="{{preferenceSaving}}" disabled="{{preferenceLoading || preferenceSaving || (preferenceError && !preferencePending)}}">{{preferenceSaving ? '正在保存' : (preferencePending ? '重试上次保存' : '保存口味')}}</button>
+    <text wx:if="{{isLocal}}" class="demo-note">本地体验口味档案</text>
+  </view>
+
+  <view class="settings-entry paper-card">
+    <button class="settings-button" bindtap="openSettings"><view class="settings-copy"><text class="settings-title">设置</text><text class="card-caption">饭桌信息 · 隐私与协议</text></view><text class="settings-arrow">›</text></button>
+  </view>
 </view>

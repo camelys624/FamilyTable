@@ -11,6 +11,7 @@
     "pages/fridge/index",
     "pages/fridge/cook",
     "pages/profile/index",
+    "pages/settings/index",
     "pages/legal/index"
   ],
   "window": {

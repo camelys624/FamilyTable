@@ -4,6 +4,7 @@ import { recipeModule } from '../../modules/recipe/index'
 import { formatToday, getCurrentWeekKey, getFamilyToday } from '../../utils/date'
 import { voteModule } from '../../modules/vote/index'
 import { shoppingModule } from '../../modules/shopping/index'
+import { familyModule } from '../../modules/family/index'
 import { toRecipe } from '../../modules/recipe/cloud-adapter'
 import { ensureSession } from '../../modules/session/index'
 import { toAppError } from '../../utils/app-error'
@@ -53,9 +54,10 @@ Page({
     }
     const userName = session.userName || '家人'
     try {
-      const [menu, recipes] = await Promise.all([
+      const [menu, recipes, currentFamily] = await Promise.all([
         menuModule.getWeekMenu(getCurrentWeekKey()),
         recipeModule.listRecipes(),
+        familyModule.getCurrentFamily(),
       ])
       const extras = await Promise.allSettled([voteModule.getCurrent(getFamilyToday(), 'dinner'), shoppingModule.getList(getCurrentWeekKey())])
       const poll = extras[0].status === 'fulfilled' ? extras[0].value : null
@@ -100,7 +102,7 @@ Page({
         })
       }
       this.setData({
-        familyName: session.familyName || '家的饭桌',
+        familyName: currentFamily.family.name,
         userName,
         todayText: formatToday(),
         todayDishes,

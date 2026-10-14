@@ -4,6 +4,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { CloudBaseFamilyRepository, hash } = require('../../cloudfunctions/family/repository')
 const { createFamilyHandler } = require('../../cloudfunctions/family/handler')
+const { guardRepository } = require('../../cloudfunctions/family/content-safety')
 
 // Optimistic transactions: doc access only, staged writes, rollback, and retries
 // on read/write conflicts. Concurrent requests really interleave before commit.
@@ -16,6 +17,75 @@ async function setup() {
   const created = await repository.create('owner', { name: '真实饭桌', displayName: '妈妈', timezone: 'Asia/Shanghai' }, 'req_create_owner')
   return { cloud, repository, familyId: created.family.id }
 }
+
+test('owner renames legacy families and members read the new name without changing invitations', async () => {
+  const { cloud, repository } = await setup()
+  const invite = await repository.invite('owner', { expiresInHours: 72 }, 'req_name_invite')
+  await repository.join('alice', { inviteCode: invite.inviteCode, displayName: '爸爸' }, 'req_name_join')
+  const before = cloud.all('families')[0]
+  assert.equal((await repository.current('owner')).family.infoVersion, 0)
+  const input = { name: '一起吃饭', expectedVersion: 0 }
+  const results = await Promise.all([repository.update('owner', input, 'req_name_update'), repository.update('owner', input, 'req_name_update')])
+  assert.deepEqual(results[0], results[1])
+  assert.equal((await repository.current('alice')).family.name, '一起吃饭')
+  assert.equal(results[0].family.infoVersion, 1)
+  const after = cloud.all('families')[0]
+  assert.equal(after.inviteCodeHash, before.inviteCodeHash)
+  assert.deepEqual(after.inviteExpiresAt, before.inviteExpiresAt)
+  assert.equal(after.memberCount, 2)
+  assert.equal(after.timezone, before.timezone)
+  assert.equal(after.updatedBy, 'owner')
+  assert.equal(cloud.all('operation_logs').filter((row) => row.action === 'family.update').length, 1)
+  await assert.rejects(repository.update('owner', { ...input, name: '不同名称' }, 'req_name_update'), { code: 'IDEMPOTENCY_CONFLICT' })
+})
+
+test('rename revalidates membership and owner role, including receipt replays', async () => {
+  const { cloud, repository, familyId } = await setup()
+  cloud.seed('family_members', 'legacy-alice', { familyId, userId: 'alice', displayName: '家人', role: 'member', status: 'active' })
+  await assert.rejects(repository.update('alice', { name: '不允许', expectedVersion: 0 }, 'req_name_member'), { code: 'FORBIDDEN' })
+  await assert.rejects(repository.update('bob', { name: '不允许', expectedVersion: 0 }, 'req_name_unjoined'), { code: 'FAMILY_REQUIRED' })
+  const input = { name: '更新名称', expectedVersion: 0 }
+  await repository.update('owner', input, 'req_name_owner')
+  cloud.beforeTransaction(() => {
+    const owner = cloud.all('family_members').find((member) => member.userId === 'owner')
+    cloud.seed('family_members', owner._id, { ...owner, role: 'member' })
+  })
+  await assert.rejects(repository.update('owner', input, 'req_name_owner'), { code: 'FORBIDDEN' })
+  assert.equal(cloud.all('families')[0].name, '更新名称')
+  assert.equal(cloud.all('operation_logs').filter((row) => row.action === 'family.update').length, 1)
+})
+
+test('concurrent renames cannot overwrite a newer name and audit failures roll back the change', async () => {
+  const { cloud, repository } = await setup()
+  const changes = await Promise.allSettled([
+    repository.update('owner', { name: '名称甲', expectedVersion: 0 }, 'req_name_a'),
+    repository.update('owner', { name: '名称乙', expectedVersion: 0 }, 'req_name_b'),
+  ])
+  assert.equal(changes.filter((result) => result.status === 'fulfilled').length, 1)
+  assert.equal(changes.find((result) => result.status === 'rejected').reason.code, 'VERSION_CONFLICT')
+  const before = cloud.all('families')[0]
+  cloud.failWrite((name) => name === 'operation_logs')
+  await assert.rejects(repository.update('owner', { name: '不能保存', expectedVersion: 1 }, 'req_name_rollback'), /injected/)
+  assert.deepEqual(cloud.all('families')[0], before)
+  assert.equal(cloud.all('idempotency_records').some((row) => row.requestId === 'req_name_rollback'), false)
+})
+
+test('rename validation and moderation reject changes before any write', async () => {
+  const { cloud, repository } = await setup()
+  const moderation = { openapi: { security: { msgSecCheck: async () => ({ errCode: 0, result: { suggest: 'risky' } }) } } }
+  const handler = createFamilyHandler(guardRepository(repository, moderation, { update: { fields: ['name'] } }), { error() {} })
+  const base = { action: 'family.update', requestId: 'req_name_handler', payload: { name: '新名称', expectedVersion: 0 } }
+  assert.equal((await handler(base, { openid: 'owner' })).error.code, 'CONTENT_REJECTED')
+  for (const payload of [{ name: '  ', expectedVersion: 0 }, { name: '字'.repeat(41), expectedVersion: 0 }, { name: '新名称', expectedVersion: -1 }, { ...base.payload, familyId: 'other-family' }, { ...base.payload, role: 'owner' }]) {
+    assert.equal((await handler({ ...base, payload }, { openid: 'owner' })).error.code, 'VALIDATION_ERROR')
+  }
+  assert.equal((await handler({ ...base, requestId: '' }, { openid: 'owner' })).error.code, 'VALIDATION_ERROR')
+  assert.equal(cloud.all('families')[0].name, '真实饭桌')
+  moderation.openapi.security.msgSecCheck = async () => ({ errCode: 0, result: { suggest: 'pass' } })
+  const result = await handler({ ...base, payload: { name: ' 新名称 ', expectedVersion: 0 } }, { openid: 'owner' })
+  assert.equal(result.ok, true)
+  assert.equal(result.data.family.name, '新名称')
+})
 
 test('real family invite and join expose members without exposing hashes or identities', async () => {
   const { cloud, repository, familyId } = await setup()

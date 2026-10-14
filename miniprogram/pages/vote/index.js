@@ -40,7 +40,7 @@ Page({
         const closesAt = result.poll ? new Date(new Date(result.poll.closesAt).getTime() + 8 * 3600000).toISOString().slice(0, 16).replace('T', ' ') : '';
         const tones = ['voter-one', 'voter-two', 'voter-three'];
         const voters = result.voters.map((voter, index) => ({ id: voter.id, name: voter.displayName, initial: voter.displayName.slice(0, 1), tone: tones[index % tones.length] }));
-        this.setData({ candidates, voters, votedRecipeId: result.currentVote?.candidateRecipeId || '', totalVotes: result.summary.totalVotes, participantCount: voters.length, pollId: result.poll?.id || '', pollTitle: result.poll?.title || '一起商量吃什么', status: result.poll?.status || '', deadline: closesAt ? `${closesAt} 截止（北京时间）` : '管理员发起投票，家人一人一票。', canCreate: result.canCreate, showCreate: this.data.showCreate || (!result.poll && result.canCreate) });
+        this.setData({ candidates, voters, votedRecipeId: result.currentVote?.candidateRecipeId || '', totalVotes: result.summary.totalVotes, participantCount: voters.length, pollId: result.poll?.id || '', pollTitle: result.poll?.title || '一起商量吃什么', status: result.poll?.status || '', deadline: closesAt ? `${closesAt} 截止（北京时间）` : '家长发起投票，家人一人一票。', canCreate: result.canCreate, showCreate: this.data.showCreate || (!result.poll && result.canCreate) });
     },
     blocked() { return this.data.loading || this.data.saving || this.data.pending || Boolean(this.data.loadError); },
     async vote(event) {

@@ -8,6 +8,7 @@ const vm = require('node:vm')
 const root = path.resolve(__dirname, '../../miniprogram')
 const { AppError, toAppError } = require(path.join(root, 'utils/app-error.js'))
 const { CloudSessionAdapter } = require(path.join(root, 'modules/session/cloud-session-adapter.js'))
+const { CloudFamilyAdapter } = require(path.join(root, 'modules/family/cloud-adapter.js'))
 
 function currentFamily(role = 'owner') {
   return {
@@ -43,6 +44,7 @@ function pageHarness(route, overrides = {}) {
     showModal: (options) => modals.push(options),
     reLaunch: (options) => nav.push(options.url),
     switchTab: (options) => nav.push(options.url),
+    navigateTo: (options) => nav.push(options.url),
     cloud: {},
   }
   vm.runInNewContext(fs.readFileSync(path.join(root, route), 'utf8'), {
@@ -54,13 +56,22 @@ function pageHarness(route, overrides = {}) {
 }
 
 test('profile shows actual cloud members and marks me by member ID even with duplicate names', async () => {
-  const { page } = pageHarness('pages/profile/index.js')
+  const { page, family } = pageHarness('pages/profile/index.js')
   await page.onShow()
   assert.equal(page.data.familyName, '云端真实家庭')
   assert.deepEqual(Array.from(page.data.members, (member) => member.isMe), [true, false])
   assert.equal(page.data.canInvite, true)
+  assert.equal(page.data.members[0].role, '家长')
+  assert.equal(page.data.members[1].role, '家庭成员')
   assert.equal(page.data.inviteCode, '')
   assert.equal(page.data.isLocal, false)
+  family.getCurrentFamily = async () => {
+    const current = currentFamily()
+    current.members[1].displayName = '🐑'
+    return current
+  }
+  await page.loadFamily()
+  assert.equal(page.data.members[1].initial, '🐑')
 })
 
 test('profile cloud failure does not show demo data and can retry loading', async () => {
@@ -184,4 +195,153 @@ test('onboarding freezes pending form input, preserves server errors and navigat
   harness.page.onInviteCode({ detail: { value: ' wxyz6789 ' } })
   assert.equal(harness.page.data.inviteCode, 'WXYZ6789')
   assert.equal(harness.page.data.errorMessage, '')
+})
+
+test('owner edits the shared name, validates input and waits for the server before updating it', async () => {
+  const writes = []
+  let finish
+  let current = currentFamily()
+  const h = pageHarness('pages/settings/index.js', { family: {
+    getCurrentFamily: async () => current,
+    updateFamily: (name, expectedVersion, requestId) => {
+      writes.push({ name, expectedVersion, requestId })
+      return new Promise((resolve) => { finish = resolve })
+    },
+  } })
+  await h.page.onShow()
+  h.page.openFamilyEditor()
+  h.page.onFamilyNameInput({ detail: { value: '   ' } })
+  await h.page.saveFamilyName()
+  assert.equal(writes.length, 0)
+  assert.match(h.page.data.familyEditError, /1～40/)
+  h.page.onFamilyNameInput({ detail: { value: ' 周末饭桌 ' } })
+  const pending = h.page.saveFamilyName()
+  await h.page.saveFamilyName()
+  assert.equal(writes.length, 1)
+  assert.equal(writes[0].name, '周末饭桌')
+  assert.equal(writes[0].expectedVersion, 0)
+  assert.equal(h.page.data.familyName, '云端真实家庭')
+  current = { ...current, family: { ...current.family, name: '周末饭桌', infoVersion: 1 } }
+  finish({ family: current.family })
+  await pending
+  assert.equal(h.page.data.familyName, '周末饭桌')
+  assert.equal(h.page.data.familyInfoVersion, 1)
+  assert.equal(h.page.data.familyEditorOpen, false)
+  assert.equal(h.toasts.at(-1).title, '饭桌名称已更新')
+})
+
+test('ordinary member cannot open or submit the family editor even if a stale form is present', async () => {
+  let writes = 0
+  const h = pageHarness('pages/settings/index.js', { family: {
+    getCurrentFamily: async () => currentFamily('member'),
+    updateFamily: async () => { writes++ },
+  } })
+  await h.page.onShow()
+  h.page.openFamilyEditor()
+  assert.equal(h.page.data.familyEditorOpen, false)
+  h.page.data.familyEditorOpen = true
+  h.page.data.familyDraftName = '不能修改'
+  await h.page.saveFamilyName()
+  assert.equal(writes, 0)
+})
+
+test('lost rename response freezes the original name and version and reuses the request on retry', async () => {
+  const writes = []
+  let current = currentFamily()
+  const h = pageHarness('pages/settings/index.js', { family: {
+    getCurrentFamily: async () => current,
+    updateFamily: async (name, expectedVersion, requestId) => {
+      writes.push({ name, expectedVersion, requestId })
+      if (writes.length === 1) throw new AppError('NETWORK_ERROR', '响应丢失')
+      current = { ...current, family: { ...current.family, name, infoVersion: 1 } }
+      return { family: current.family }
+    },
+  } })
+  await h.page.onShow()
+  h.page.openFamilyEditor()
+  h.page.onFamilyNameInput({ detail: { value: '家人饭桌' } })
+  await h.page.saveFamilyName()
+  assert.equal(h.page.data.familyPending, true)
+  h.page.onFamilyNameInput({ detail: { value: '另一个名称' } })
+  h.page.closeFamilyEditor()
+  assert.equal(h.page.data.familyDraftName, '家人饭桌')
+  assert.equal(h.page.data.familyEditorOpen, true)
+  await h.page.saveFamilyName()
+  assert.deepEqual(writes[0], writes[1])
+  assert.equal(h.page.data.familyName, '家人饭桌')
+  assert.equal(h.page.data.familyPending, false)
+})
+
+test('rename conflict refreshes the version while preserving the draft for an explicit next save', async () => {
+  let writes = 0
+  const h = pageHarness('pages/settings/index.js', { family: {
+    getCurrentFamily: async () => ({ ...currentFamily(), family: { id: 'family-real', name: writes ? '家人最新名称' : '原名称', infoVersion: writes ? 8 : 2 } }),
+    updateFamily: async () => { writes++; throw new AppError('VERSION_CONFLICT', '名称已更新，请确认后重新保存') },
+  } })
+  await h.page.onShow()
+  h.page.openFamilyEditor()
+  h.page.onFamilyNameInput({ detail: { value: '我的草稿' } })
+  await h.page.saveFamilyName()
+  assert.equal(writes, 1)
+  assert.equal(h.page.data.familyName, '家人最新名称')
+  assert.equal(h.page.data.familyInfoVersion, 8)
+  assert.equal(h.page.data.familyDraftName, '我的草稿')
+  assert.equal(h.page.data.familyEditorOpen, true)
+  assert.equal(h.page.data.familyPending, false)
+  assert.match(h.page.data.familyEditError, /重新保存/)
+})
+
+test('revoked administrator rights refresh the member role and disable further saves', async () => {
+  let writes = 0
+  const h = pageHarness('pages/settings/index.js', { family: {
+    getCurrentFamily: async () => currentFamily(writes ? 'member' : 'owner'),
+    updateFamily: async () => { writes++; throw new AppError('FORBIDDEN', '仅管理员可修改') },
+  } })
+  await h.page.onShow()
+  h.page.openFamilyEditor()
+  h.page.onFamilyNameInput({ detail: { value: '新饭桌' } })
+  await h.page.saveFamilyName()
+  await h.page.saveFamilyName()
+  assert.equal(writes, 1)
+  assert.equal(h.page.data.canEditFamily, false)
+})
+
+test('family adapter sends only the name and version, and normalizes legacy version zero', async () => {
+  const calls = []
+  const adapter = new CloudFamilyAdapter({ call: async (...args) => { calls.push(args); return calls.length === 1 ? currentFamily() : { family: { id: 'family-real', name: '新饭桌', infoVersion: 1 } } } })
+  assert.equal((await adapter.getCurrentFamily()).family.infoVersion, 0)
+  await adapter.updateFamily('新饭桌', 0, 'req_rename_1')
+  assert.deepEqual(calls[1], ['family', 'family.update', { name: '新饭桌', expectedVersion: 0 }, 'req_rename_1'])
+})
+
+test('profile settings entrance opens a registered page and settings retains the privacy link', async () => {
+  const h = pageHarness('pages/profile/index.js')
+  h.page.openSettings()
+  assert.deepEqual(h.nav, ['/pages/settings/index'])
+  const s = pageHarness('pages/settings/index.js')
+  s.page.openLegal()
+  assert.deepEqual(s.nav, ['/pages/legal/index?type=privacy'])
+  const routes = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).pages
+  assert.ok(routes.includes('pages/settings/index'))
+})
+
+test('settings cloud loading failure disables edits and retry loads the actual shared name', async () => {
+  const h = pageHarness('pages/settings/index.js', { family: { getCurrentFamily: async () => { throw new AppError('NETWORK_ERROR', '连接失败') } } })
+  await h.page.onShow()
+  h.page.openFamilyEditor()
+  assert.equal(h.page.data.canEditFamily, false)
+  assert.equal(h.page.data.familyEditorOpen, false)
+  assert.equal(h.page.data.familyError, '连接失败')
+  h.family.getCurrentFamily = async () => currentFamily()
+  await h.page.loadFamily()
+  assert.equal(h.page.data.familyName, '云端真实家庭')
+  assert.equal(h.page.data.familyError, '')
+})
+
+test('profile refreshes a renamed table on return from settings', async () => {
+  const h = pageHarness('pages/profile/index.js')
+  await h.page.onShow()
+  h.family.getCurrentFamily = async () => ({ ...currentFamily(), family: { id: 'family-real', name: '新的饭桌名称', infoVersion: 1 } })
+  await h.page.onShow()
+  assert.equal(h.page.data.familyName, '新的饭桌名称')
 })

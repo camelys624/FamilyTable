@@ -8,6 +8,7 @@ const SAFE_ERROR_CODES = new Set([
   'NOT_FAMILY_MEMBER',
   'FORBIDDEN',
   'VALIDATION_ERROR',
+  'VERSION_CONFLICT',
   'INVITE_INVALID',
   'INVITE_EXPIRED',
   'FAMILY_FULL',
@@ -74,10 +75,18 @@ function createFamilyHandler(repository, logger = console) {
         const data = await repository.current(identity.openid)
         return { ok: true, data, requestId }
       }
-      if (['family.create', 'family.invite', 'family.join'].includes(event.action)) {
+      if (['family.create', 'family.invite', 'family.join', 'family.update'].includes(event.action)) {
         if (typeof event.requestId !== 'string' || event.requestId.trim().length < 8 || event.requestId.trim().length > 64) {
           throw validationError('家庭操作需要 8～64 位 requestId', { field: 'requestId' })
         }
+      }
+      if (event.action === 'family.update') {
+        assertPayloadFields(payload, ['name', 'expectedVersion'])
+        const name = typeof payload.name === 'string' ? payload.name.trim() : ''
+        if (!name || name.length > 40) throw validationError('饭桌名称需填写 1～40 个字', { field: 'name' })
+        if (!Number.isInteger(payload.expectedVersion) || payload.expectedVersion < 0) throw validationError('饭桌信息版本无效，请重新加载', { field: 'expectedVersion' })
+        const data = await repository.update(identity.openid, { name, expectedVersion: payload.expectedVersion }, requestId)
+        return { ok: true, data, requestId }
       }
       if (event.action === 'family.invite') {
         assertPayloadFields(payload, ['expiresInHours'])
