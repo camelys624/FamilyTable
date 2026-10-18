@@ -13,13 +13,15 @@ const list = (version = 1, items = []) => ({ id: 'shopping-real', weekStart: '20
 function harness(route, modules = {}) {
   let page
   const toasts = [], navigation = [], modals = []
-  const preference = { getMine: async () => ({ spicyLevel: 2, avoidFoods: ['花生'], notes: '' }), updateMine: async (input) => input, ...modules.preference }
+  const preference = { getMine: async () => ({ spicyLevel: 2, avoidFoods: ['花生'], allergies: [], notes: '' }), updateMine: async (input) => input, ...modules.preference }
   const shopping = { getList: async () => list(), addItem: async () => list(2), checkItem: async () => list(2), generate: async () => list(2), clearChecked: async () => list(2), ...modules.shopping }
   const vote = { getCurrent: async () => emptyVote(), cast: async () => ({}), createPoll: async () => ({}), close: async () => ({}), ...modules.vote }
   const mocks = {
     '../../utils/app-error': { AppError, toAppError }, '../../utils/write-intent': { WriteIntent },
     '../../utils/request-id': require(path.join(root, 'utils/request-id')),
     '../../config/runtime': { runtimeConfig: { repositoryMode: 'cloud' } },
+    '../../config/preference-options': require(path.join(root, 'config/preference-options')),
+    '../../utils/display-name': require(path.join(root, 'utils/display-name')),
     '../../utils/date': { getFamilyToday: () => '2026-10-13', getCurrentWeekKey: () => '2026-10-12', formatToday: () => '10月13日' },
     '../../services/store': { resetDemo() {} },
     '../../modules/recipe/cloud-adapter': { toRecipe },
@@ -117,26 +119,81 @@ test('ordinary members cannot create polls and closed polls cannot be cast from 
 
 test('profile loads private cloud preferences and retries exactly the saved intent after a network error', async () => {
   const requests = []
-  const h = harness('pages/profile/index.js', { preference: { getMine: async () => ({ spicyLevel: 2, avoidFoods: ['花生'], notes: '原有备注' }), updateMine: async (input, requestId) => {
+  const h = harness('pages/profile/index.js', { preference: { getMine: async () => ({ spicyLevel: 2, avoidFoods: ['花生'], allergies: ['虾蟹'], notes: '原有备注' }), updateMine: async (input, requestId) => {
     requests.push({ input, requestId })
     if (requests.length === 1) throw new AppError('NETWORK_ERROR', '响应丢失')
     return input
   } } })
   await h.page.onShow()
-  assert.equal(h.page.data.avoidFood, '花生')
+  assert.deepEqual([...h.page.data.dislikes], ['花生'])
+  assert.deepEqual([...h.page.data.allergies], ['虾蟹'])
   assert.equal(h.page.data.spicyLevel, 2)
-  h.page.onSpicySelect({ currentTarget: { dataset: { level: '3' } } })
+  assert.equal(h.page.data.dirty, false)
+
+  h.page.pickSpicy({ currentTarget: { dataset: { level: '3' } } })
   assert.equal(h.page.data.spicyLevel, 3)
-  await h.page.saveAvoidFood()
-  h.page.onAvoidInput({ detail: { value: '香菜' } })
-  h.page.onSpicySelect({ currentTarget: { dataset: { level: '0' } } })
+  assert.equal(h.page.data.dirty, true)
+
+  await h.page.onSave()
+  // 保存结果未知时输入被锁住，后续改动不生效
+  h.page.toggleOption({ currentTarget: { dataset: { key: 'dislike', value: '香菜' } } })
+  h.page.pickSpicy({ currentTarget: { dataset: { level: '0' } } })
   assert.equal(h.page.data.spicyLevel, 3)
-  assert.equal(h.page.data.avoidFood, '花生')
-  await h.page.saveAvoidFood()
+  assert.deepEqual([...h.page.data.dislikes], ['花生'])
+
+  await h.page.onSave()
   assert.equal(requests[0].requestId, requests[1].requestId)
   assert.deepEqual(JSON.parse(JSON.stringify(requests[1].input.avoidFoods)), ['花生'])
+  assert.deepEqual(JSON.parse(JSON.stringify(requests[1].input.allergies)), ['虾蟹'])
   assert.equal(requests[1].input.notes, '原有备注')
   assert.equal(requests[1].input.spicyLevel, 3)
+  assert.equal(h.page.data.dirty, false)
+})
+
+test('a rejected preference save keeps the draft editable and can be saved again', async () => {
+  const requests = []
+  const h = harness('pages/profile/index.js', { preference: { getMine: async () => ({ spicyLevel: 1, avoidFoods: [], allergies: [], notes: '' }), updateMine: async (input, requestId) => {
+    requests.push({ input: JSON.parse(JSON.stringify(input)), requestId })
+    // 未更新的 preference 云函数不认识 allergies 字段
+    if (requests.length === 1) throw new AppError('VALIDATION_ERROR', '请求包含不支持的字段')
+    return input
+  } } })
+  await h.page.onShow()
+  h.page.toggleOption({ currentTarget: { dataset: { key: 'allergen', value: '虾蟹' } } })
+  await h.page.onSave()
+
+  assert.equal(requests.length, 1)
+  assert.deepEqual(requests[0].input.allergies, ['虾蟹'])
+  assert.equal(h.page.data.preferenceSaveError, '请求包含不支持的字段')
+  assert.equal(h.page.data.preferenceError, '', '保存失败不能伪装成读取失败、要求重新加载')
+  assert.equal(h.page.data.preferencePending, false)
+  assert.equal(h.page.data.dirty, true)
+  assert.equal(h.page.data.canSave, true)
+
+  // 返回本页（例如从设置页回来）不会用服务端旧值冲掉草稿
+  await h.page.onShow()
+  assert.deepEqual([...h.page.data.allergies], ['虾蟹'])
+
+  // 草稿仍可编辑，编辑后旧错误消失，再保存是一次新的请求
+  h.page.pickSpicy({ currentTarget: { dataset: { level: '2' } } })
+  assert.equal(h.page.data.spicyLevel, 2)
+  assert.equal(h.page.data.preferenceSaveError, '')
+  await h.page.onSave()
+  assert.equal(requests.length, 2)
+  assert.notEqual(requests[0].requestId, requests[1].requestId)
+  assert.equal(requests[1].input.spicyLevel, 2)
+  assert.deepEqual(requests[1].input.allergies, ['虾蟹'])
+  assert.equal(h.page.data.dirty, false)
+  assert.equal(h.page.data.preferenceSaveError, '')
+})
+
+test('preference payload omits empty allergies so users without allergens can save on any deployed version', async () => {
+  const requests = []
+  const h = harness('pages/profile/index.js', { preference: { updateMine: async (input) => { requests.push(JSON.parse(JSON.stringify(input))); return input } } })
+  await h.page.onShow()
+  h.page.pickSpicy({ currentTarget: { dataset: { level: '0' } } })
+  await h.page.onSave()
+  assert.deepEqual(Object.keys(requests[0]).sort(), ['avoidFoods', 'notes', 'spicyLevel'])
 })
 
 test('new users cannot submit onboarding until explicitly accepting the agreements', async () => {
@@ -240,4 +297,21 @@ test('home uses separate food artwork for shrimp custard and taro toast, with ph
   h.page.onDishImageError({ currentTarget: { dataset: { id: 'shrimp' } } })
   assert.equal(h.page.data.todayDishes[0].imagePath, '')
   assert.equal(h.page.data.todayDishes[0].foodSheetStyle, 'left:0;')
+})
+
+test('local preference adapter keeps allergies across save and reload', async () => {
+  const state = { spicyLevel: 1, avoidFood: '香菜' }
+  const store = {
+    getState: () => JSON.parse(JSON.stringify(state)),
+    updatePreferences(spicyLevel, avoidFood, allergies) { Object.assign(state, { spicyLevel, avoidFood, allergies }) },
+  }
+  const sandbox = { exports: {}, require(id) { assert.equal(id, '../../services/store'); return store } }
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'modules/preference/local-adapter.js'), 'utf8'), sandbox)
+  const adapter = new sandbox.exports.LocalPreferenceAdapter()
+  assert.deepEqual(JSON.parse(JSON.stringify(await adapter.getMine())).allergies, [], '旧版本地数据没有 allergies 字段')
+  await adapter.updateMine({ spicyLevel: 2, avoidFoods: ['葱'], allergies: ['芒果'], notes: '' })
+  const reloaded = JSON.parse(JSON.stringify(await adapter.getMine()))
+  assert.deepEqual(reloaded.allergies, ['芒果'])
+  assert.deepEqual(reloaded.avoidFoods, ['葱'])
+  assert.equal(reloaded.spicyLevel, 2)
 })

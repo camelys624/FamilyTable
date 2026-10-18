@@ -99,7 +99,10 @@ Page({
         if (refresh)
             await this.loadFamily();
     },
-    openLegal() { wx.navigateTo({ url: '/pages/legal/index?type=privacy' }); },
+    openLegal(event) {
+        const type = event.currentTarget.dataset.type === 'terms' ? 'terms' : 'privacy';
+        wx.navigateTo({ url: `/pages/legal/index?type=${type}` });
+    },
     resetDemo() {
         if (!this.data.isLocal)
             return;

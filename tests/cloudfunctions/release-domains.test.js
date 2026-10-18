@@ -129,12 +129,15 @@ test('manual-only shopping lists can be created before a menu without duplicate 
 test('preferences belong only to the caller and repeat writes are idempotent', async () => {
   const { preference, cloud } = setup()
   assert.deepEqual((await preference.getMine('owner')).preference.avoidFoods, [])
-  const input = { spicyLevel: 3, avoidFoods: ['花生'], notes: '' }
+  assert.deepEqual((await preference.getMine('owner')).preference.allergies, [])
+  const input = { spicyLevel: 3, avoidFoods: ['花生'], allergies: ['虾蟹'], notes: '' }
   const updates = await Promise.all(Array.from({ length: 3 }, () => preference.updateMine('owner', input, 'req_preference_same')))
   assert.deepEqual(updates[0], updates[1])
   assert.equal(cloud.all('preferences').length, 1)
   assert.equal((await preference.getMine('member')).preference.spicyLevel, 1)
   assert.equal((await preference.getMine('owner')).preference.spicyLevel, 3)
+  assert.deepEqual((await preference.getMine('owner')).preference.allergies, ['虾蟹'])
+  assert.deepEqual((await preference.getMine('member')).preference.allergies, [])
   await assert.rejects(preference.updateMine('owner', { ...input, spicyLevel: 2 }, 'req_preference_same'), { code: 'IDEMPOTENCY_CONFLICT' })
 })
 
@@ -144,6 +147,7 @@ test('all domain handlers reject forged fields and invalid types before touching
     [createShoppingHandler, { action: 'shopping.checkItem', payload: { listId: 'list', weekStart, itemId: 'item', checked: 'true', expectedVersion: 1 } }],
     [createPreferenceHandler, { action: 'preference.updateMine', payload: { spicyLevel: 1, avoidFoods: [], userId: 'forged' } }],
     [createPreferenceHandler, { action: 'preference.updateMine', payload: { spicyLevel: '1', avoidFoods: [] } }],
+    [createPreferenceHandler, { action: 'preference.updateMine', payload: { spicyLevel: 1, avoidFoods: [], allergies: '花生' } }],
   ]
   for (const [factory, event] of cases) {
     const result = await factory({}, { error() {} })({ ...event, requestId: 'req_validation' }, { openid: 'owner' })

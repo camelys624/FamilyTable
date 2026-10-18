@@ -31,6 +31,8 @@ function pageHarness(route, overrides = {}) {
   const mocks = {
     '../../services/store': { getState: () => ({ familyName: '本地假家庭', members: ['假妈妈'], spicyLevel: 1, avoidFood: '' }), updatePreferences() {}, resetDemo() {} },
     '../../config/runtime': { runtimeConfig: { repositoryMode: 'cloud' } },
+    '../../config/preference-options': require(path.join(root, 'config/preference-options.js')),
+    '../../utils/display-name': require(path.join(root, 'utils/display-name.js')),
     '../../modules/session/index': session,
     '../../modules/family/index': { familyModule: family },
     '../../modules/preference/index': { preferenceModule: { getMine: async () => ({ spicyLevel: 1, avoidFoods: [], notes: '' }) } },
@@ -62,7 +64,7 @@ test('profile shows actual cloud members and marks me by member ID even with dup
   assert.deepEqual(Array.from(page.data.members, (member) => member.isMe), [true, false])
   assert.equal(page.data.canInvite, true)
   assert.equal(page.data.members[0].role, '家长')
-  assert.equal(page.data.members[1].role, '家庭成员')
+  assert.equal(page.data.members[1].role, '成员')
   assert.equal(page.data.inviteCode, '')
   assert.equal(page.data.isLocal, false)
   family.getCurrentFamily = async () => {
@@ -71,7 +73,10 @@ test('profile shows actual cloud members and marks me by member ID even with dup
     return current
   }
   await page.loadFamily()
-  assert.equal(page.data.members[1].initial, '🐑')
+  // 纯 emoji 昵称不是可读的名字，回退成「家人 2」并使用默认头像
+  assert.equal(page.data.members[1].name, '家人 2')
+  assert.equal(page.data.members[1].initial, '')
+  assert.equal(page.data.members[1].isFallback, true)
 })
 
 test('profile cloud failure does not show demo data and can retry loading', async () => {
@@ -314,15 +319,26 @@ test('family adapter sends only the name and version, and normalizes legacy vers
   assert.deepEqual(calls[1], ['family', 'family.update', { name: '新饭桌', expectedVersion: 0 }, 'req_rename_1'])
 })
 
-test('profile settings entrance opens a registered page and settings retains the privacy link', async () => {
+test('profile settings entrance opens a registered page and settings owns the legal links', async () => {
   const h = pageHarness('pages/profile/index.js')
   h.page.openSettings()
   assert.deepEqual(h.nav, ['/pages/settings/index'])
+  // 隐私政策、用户协议、意见反馈都收进了设置页，「我的」不再直接跳协议。
+  assert.equal(h.page.openLegal, undefined)
+  const profileView = fs.readFileSync(path.join(root, 'pages/profile/index.wxml'), 'utf8')
+  assert.doesNotMatch(profileView, /open-type="feedback"|openLegal/)
   const s = pageHarness('pages/settings/index.js')
-  s.page.openLegal()
-  assert.deepEqual(s.nav, ['/pages/legal/index?type=privacy'])
+  s.page.openLegal({ currentTarget: { dataset: { type: 'privacy' } } })
+  s.page.openLegal({ currentTarget: { dataset: { type: 'terms' } } })
+  s.page.openLegal({ currentTarget: { dataset: { type: 'unexpected' } } })
+  assert.deepEqual(s.nav, ['/pages/legal/index?type=privacy', '/pages/legal/index?type=terms', '/pages/legal/index?type=privacy'])
+  const settingsView = fs.readFileSync(path.join(root, 'pages/settings/index.wxml'), 'utf8')
+  assert.match(settingsView, /data-type="privacy"/)
+  assert.match(settingsView, /data-type="terms"/)
+  assert.match(settingsView, /open-type="feedback"/)
   const routes = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).pages
   assert.ok(routes.includes('pages/settings/index'))
+  assert.ok(routes.includes('pages/legal/index'))
 })
 
 test('settings cloud loading failure disables edits and retry loads the actual shared name', async () => {

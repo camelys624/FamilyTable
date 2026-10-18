@@ -1,6 +1,6 @@
 page {
   --ink: #18332f;
-  --muted: #718078;
+  --muted: #5f6f67;
   --jade: #eaf2ea;
   --leaf: #4f7a60;
   --yolk: #f4c95d;

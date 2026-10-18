@@ -1,5 +1,5 @@
 <view class="page-shell design-page settings-page">
-  <view class="settings-heading"><text class="eyebrow">把家的日常安排好</text><view class="page-title">设置</view><text class="design-note">饭桌信息、每周安排与隐私。</text></view>
+  <view class="settings-heading"><text class="eyebrow">把家的日常安排好</text><view class="page-title">设置</view><text class="design-note">饭桌信息、每周安排、协议与反馈。</text></view>
   <view wx:if="{{familyError}}" class="family-error paper-card"><text>{{familyError}}</text><button bindtap="loadFamily" loading="{{loading}}" disabled="{{loading}}">重新加载</button></view>
   <view wx:if="{{!familyError}}" class="family-info-card paper-card">
     <view class="design-heading"><view><text class="section-title">饭桌信息</text><text class="design-note">{{loading ? '正在读取饭桌信息…' : familyName}}</text></view><button wx:if="{{canEditFamily && !familyEditorOpen}}" class="edit-family-button" bindtap="openFamilyEditor" disabled="{{loading}}">修改名称</button></view>
@@ -12,10 +12,20 @@
     </view>
     <text wx:if="{{!canEditFamily && !loading}}" class="design-note">饭桌信息由家长修改。</text>
   </view>
+  <text class="group-title">每周安排</text>
   <view class="settings-list paper-card">
     <view class="settings-row"><view><text class="settings-label">每周从周一开始</text><text class="design-note">周菜单按周一至周日安排。</text></view><text class="settings-value">已开启</text></view>
-    <button class="settings-row legal-button" bindtap="openLegal"><text class="settings-label">隐私政策与用户协议</text><text class="design-chevron">›</text></button>
-    <button wx:if="{{isLocal}}" class="settings-row danger" bindtap="resetDemo"><text>重置体验数据</text><text class="design-chevron">›</text></button>
+  </view>
+
+  <text class="group-title">协议与帮助</text>
+  <view class="settings-list paper-card">
+    <view class="settings-row" bindtap="openLegal" data-type="privacy" hover-class="settings-row-hover"><text class="settings-label">隐私政策</text><view class="settings-arrow"></view></view>
+    <view class="settings-row" bindtap="openLegal" data-type="terms" hover-class="settings-row-hover"><text class="settings-label">用户协议</text><view class="settings-arrow"></view></view>
+    <button class="settings-row feedback-button" open-type="feedback" hover-class="settings-row-hover"><view><text class="settings-label">意见反馈</text><text class="design-note">遇到问题或有好想法，告诉我们。</text></view><view class="settings-arrow"></view></button>
+  </view>
+
+  <view wx:if="{{isLocal}}" class="settings-list paper-card danger-card">
+    <button class="settings-row danger" bindtap="resetDemo"><text>重置体验数据</text><view class="settings-arrow"></view></button>
   </view>
   <text class="version-text">家常 Family Table · MVP 1.0</text>
 </view>

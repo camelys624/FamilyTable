@@ -335,10 +335,11 @@ function clearCheckedItems() {
     state.shoppingItems = state.shoppingItems.filter((item) => !item.checked);
     saveState(state);
 }
-function updatePreferences(spicyLevel, avoidFood) {
+function updatePreferences(spicyLevel, avoidFood, allergies = []) {
     const state = getState();
     state.spicyLevel = spicyLevel;
     state.avoidFood = avoidFood;
+    state.allergies = allergies.slice();
     saveState(state);
 }
 function resetDemo() {

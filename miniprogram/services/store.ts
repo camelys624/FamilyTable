@@ -327,10 +327,11 @@ export function clearCheckedItems() {
   saveState(state)
 }
 
-export function updatePreferences(spicyLevel: number, avoidFood: string) {
+export function updatePreferences(spicyLevel: number, avoidFood: string, allergies: string[] = []) {
   const state = getState()
   state.spicyLevel = spicyLevel
   state.avoidFood = avoidFood
+  state.allergies = allergies.slice()
   saveState(state)
 }
 

@@ -2,12 +2,12 @@
 
 const { BaseRepository, get, hash, dataOnly } = require('./common')
 const preferenceId = (context) => `pref_${hash(`${context.familyId}:${context.user._id}`).slice(0, 40)}`
-const view = (document) => ({ id: document._id, spicyLevel: document.spicyLevel, avoidFoods: document.avoidFoods || [], notes: document.notes || '' })
+const view = (document) => ({ id: document._id, spicyLevel: document.spicyLevel, avoidFoods: document.avoidFoods || [], allergies: document.allergies || [], notes: document.notes || '' })
 class CloudBasePreferenceRepository extends BaseRepository {
   async getMine(openid) {
     const context = await this.context(openid)
     const rows = await this.db.collection('preferences').where({ familyId: context.familyId, userId: context.user._id }).limit(1).get()
-    return { preference: rows.data[0] ? view(rows.data[0]) : { id: preferenceId(context), spicyLevel: 1, avoidFoods: [], notes: '' } }
+    return { preference: rows.data[0] ? view(rows.data[0]) : { id: preferenceId(context), spicyLevel: 1, avoidFoods: [], allergies: [], notes: '' } }
   }
 
   async updateMine(openid, input, requestId) {

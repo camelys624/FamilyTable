@@ -1,3 +1,4 @@
 .kitchen-art { position: relative; width: 160rpx; height: 160rpx; overflow: hidden; }
 .sheet { position: absolute; max-width: none; }
-.kitchen-art { clip-path: inset(4%); }
+/* 只裁掉 1% 防止相邻格子渗边，之前 inset(4%) 会把插画边缘切掉一块。 */
+.kitchen-art { clip-path: inset(1%); }

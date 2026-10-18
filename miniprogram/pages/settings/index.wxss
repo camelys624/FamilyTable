@@ -14,13 +14,18 @@ button.edit-family-button { display: flex; align-items: center; justify-content:
 .family-edit-save { background: var(--ink); color: #fff; }
 .family-error { display: flex; align-items: center; gap: 20rpx; padding: 24rpx; margin-bottom: 20rpx; color: #b3614c; font-size: 25rpx; }
 .family-error button { flex: none; margin: 0; font-size: 23rpx; color: var(--ink); background: #eef3e9; }
+.group-title { display: block; margin: 30rpx 8rpx 14rpx; color: var(--muted); font-size: 23rpx; font-weight: 600; letter-spacing: 2rpx; }
 .settings-list { padding: 0 24rpx; }
-.settings-row { display: flex; align-items: center; justify-content: space-between; min-height: 106rpx; gap: 20rpx; padding: 14rpx 0; box-sizing: border-box; font-size: 25rpx; }
+.settings-list + .settings-list { margin-top: 20rpx; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; min-height: 106rpx; gap: 20rpx; padding: 14rpx 0; box-sizing: border-box; font-size: 26rpx; }
 .settings-row + .settings-row { border-top: 1rpx solid #e7eee5; }
-.settings-label { display: block; color: var(--ink); }
+.settings-row-hover { opacity: 0.6; }
+.settings-label { display: block; color: var(--ink); font-weight: 500; }
 .settings-row .design-note { margin-top: 8rpx; font-size: 22rpx; }
 .settings-value { flex: none; color: #347a5d; font-size: 23rpx; }
-button.settings-row { width: 100%; margin: 0; background: transparent; border-radius: 0; line-height: 1.6; text-align: left; }
+.settings-arrow { flex: none; width: 16rpx; height: 16rpx; margin-right: 6rpx; border-right: 2rpx solid #b3bfb7; border-bottom: 2rpx solid #b3bfb7; transform: rotate(-45deg); }
+button.settings-row { width: 100%; margin: 0; padding: 14rpx 0; background: transparent; border-radius: 0; color: var(--ink); font-weight: 400; line-height: 1.6; text-align: left; }
 button.settings-row::after { border: 0; }
+.danger-card { margin-top: 30rpx; }
 .settings-row.danger { color: #b3614c; }
-.version-text { display: block; text-align: center; margin-top: 28rpx; font-size: 20rpx; color: #8c988f; }
+.version-text { display: block; text-align: center; margin-top: 36rpx; font-size: 20rpx; color: #8c988f; }

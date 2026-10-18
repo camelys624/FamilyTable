@@ -49,4 +49,6 @@ export interface AppState {
   votedRecipeId: string
   spicyLevel: number
   avoidFood: string
+  /** 本地体验模式的过敏原；旧版本地数据没有该字段。 */
+  allergies?: string[]
 }
