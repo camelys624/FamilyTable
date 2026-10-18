@@ -23,13 +23,13 @@ function harness(route, modules = {}) {
     '../../utils/date': { getFamilyToday: () => '2026-10-13', getCurrentWeekKey: () => '2026-10-12', formatToday: () => '10月13日' },
     '../../services/store': { resetDemo() {} },
     '../../modules/recipe/cloud-adapter': { toRecipe },
-    '../../modules/recipe/index': { recipeModule: { listRecipes: async () => [] } },
-    '../../modules/menu/index': { menuModule: { getWeekMenu: async () => ({ days: Array.from({ length: 7 }, () => ({ breakfast: [], lunch: [], dinner: [] })) }) } },
+    '../../modules/recipe/index': { recipeModule: { listRecipes: async () => [], ...modules.recipe } },
+    '../../modules/menu/index': { menuModule: { getWeekMenu: async () => ({ days: Array.from({ length: 7 }, () => ({ breakfast: [], lunch: [], dinner: [] })) }), ...modules.menu } },
     '../../modules/vote/index': { voteModule: vote }, '../../modules/shopping/index': { shoppingModule: shopping }, '../../modules/preference/index': { preferenceModule: preference },
     '../../modules/family/index': { familyModule: { getCurrentFamily: async () => ({ family: { name: '真实家庭' }, currentMember: { id: 'member', displayName: '妈妈', role: 'owner' }, members: [{ id: 'member', displayName: '妈妈', role: 'owner' }], invitation: { active: false, expiresAt: '' } }) } },
-    '../../modules/session/index': { ensureSession: async () => ({ onboarded: true, familyName: '缓存旧名称' }), clearSession() {}, completeOnboarding: async () => {} },
+    '../../modules/session/index': { ensureSession: async () => ({ onboarded: true, familyName: '缓存旧名称' }), clearSession() {}, completeOnboarding: async () => {}, ...modules.session },
   }
-  vm.runInNewContext(fs.readFileSync(path.join(root, route), 'utf8'), { exports: {}, require(id) { assert.ok(mocks[id], `unexpected ${id}`); return mocks[id] }, Page(options) { page = options }, wx: { showToast: (options) => toasts.push(options), navigateTo: (options) => navigation.push(options.url), reLaunch: (options) => navigation.push(options.url), showModal: (options) => modals.push(options), stopPullDownRefresh() {} } })
+  vm.runInNewContext(fs.readFileSync(path.join(root, route), 'utf8'), { exports: {}, require(id) { assert.ok(mocks[id], `unexpected ${id}`); return mocks[id] }, Page(options) { page = options }, wx: { showToast: (options) => toasts.push(options), navigateTo: (options) => navigation.push(options.url), reLaunch: (options) => navigation.push(options.url), showModal: (options) => modals.push(options), stopPullDownRefresh() {}, ...modules.wx } })
   page.data = structuredClone(page.data)
   page.setData = (patch) => Object.assign(page.data, patch)
   return { page, shopping, vote, preference, toasts, navigation, modals }
@@ -155,4 +155,89 @@ test('home reads the latest shared family name instead of its stale login snapsh
   assert.equal(h.page.data.familyName, '真实家庭')
   assert.equal(h.page.data.loadError, '')
   assert.equal(h.page.data.loading, false)
+})
+
+test('home uses server poll permissions and clears a stale create action on failure', async () => {
+  const h = harness('pages/home/index.js')
+  await h.page.onShow()
+  assert.equal(h.page.data.canCreatePoll, true)
+  assert.equal(h.page.data.pollId, '')
+  h.page.openVote()
+  assert.equal(h.navigation[0], '/pages/vote/index')
+  h.vote.getCurrent = async () => ({ ...emptyVote(), canCreate: false })
+  await h.page.loadData()
+  assert.equal(h.page.data.canCreatePoll, false)
+  h.vote.getCurrent = async () => { throw new AppError('NETWORK_ERROR', '投票连接失败') }
+  await h.page.loadData()
+  assert.equal(h.page.data.canCreatePoll, false)
+  assert.equal(h.page.data.voteError, '投票连接失败')
+  assert.equal(h.page.data.loadError, '')
+})
+
+test('home keeps each meal distinct and falls back from failed photos to food artwork', async () => {
+  const ribs = toRecipe({ id: 'ribs', name: '山楂小排', category: '家常菜', duration: 45, difficulty: 'easy', imagePath: 'https://example.com/ribs.jpg', ingredients: [{ name: '猪肋排', usedUp: true }, { name: '山楂', usedUp: true }] })
+  const greens = toRecipe({ id: 'greens', name: '白灼菜心', category: '素菜', duration: 10, difficulty: 'easy', ingredients: [{ name: '菜心', usedUp: true }] })
+  const entry = { id: 'entry', recipeId: ribs.id, recipe: ribs }
+  const h = harness('pages/home/index.js', {
+    recipe: { listRecipes: async () => [ribs, greens] },
+    menu: { getWeekMenu: async () => ({ days: [{ breakfast: [], lunch: [entry], dinner: [entry] }] }) },
+    session: { ensureSession: async () => ({ onboarded: true, userName: '微信用户' }) },
+  })
+  await h.page.onShow()
+  const dishes = h.page.data.todayDishes
+  assert.equal(dishes[0].mealLabel, '午餐')
+  assert.equal(dishes[1].mealLabel, '晚餐')
+  assert.notEqual(dishes[0].displayKey, dishes[1].displayKey)
+  assert.equal(dishes[0].foodEmoji, '🍖')
+  assert.match(dishes[0].subtitle, /猪肋排 · 山楂/)
+  assert.equal(dishes[2].artKind, 'greensDish')
+  assert.match(dishes[2].subtitle, /待安排/)
+  assert.equal(h.page.data.greeting, '小厨师，开饭啦')
+  h.page.onDishImageError({ currentTarget: { dataset: { id: 'ribs' } } })
+  assert.equal(h.page.data.todayDishes[0].imagePath, '')
+  assert.equal(h.page.data.todayDishes[1].imagePath, '')
+})
+
+test('home retains poll results with zero votes and works with an empty week', async () => {
+  const result = emptyVote()
+  result.poll = { id: 'poll-empty', candidates: [] }
+  const h = harness('pages/home/index.js', { menu: { getWeekMenu: async () => ({ days: [] }) }, vote: { getCurrent: async () => result } })
+  await h.page.onShow()
+  assert.equal(h.page.data.pollId, 'poll-empty')
+  assert.equal(h.page.data.familyName, '真实家庭')
+  assert.equal(h.page.data.loading, false)
+})
+
+test('home keeps poll snapshot names while reusing available recipe photos', async () => {
+  const current = toRecipe({ id: 'shrimp', name: '改名后的菜', duration: 30, category: '家常菜', difficulty: 'easy', imagePath: 'https://example.com/shrimp.jpg', ingredients: [] })
+  const result = emptyVote()
+  result.poll = { id: 'poll-real', candidates: [{ recipeId: 'shrimp', recipeSnapshot: { name: '虾仁豆腐蒸蛋', durationMinutes: 20, category: '家常菜', difficulty: 'easy', ingredients: [] } }] }
+  const h = harness('pages/home/index.js', { recipe: { listRecipes: async () => [current] }, vote: { getCurrent: async () => result } })
+  await h.page.onShow()
+  assert.equal(h.page.data.pollCandidates[0].name, '虾仁豆腐蒸蛋')
+  assert.equal(h.page.data.pollCandidates[0].duration, 20)
+  assert.equal(h.page.data.pollCandidates[0].imagePath, current.imagePath)
+})
+
+test('home navigation reserves the device status bar and capsule space', () => {
+  const h = harness('pages/home/index.js', { wx: { getWindowInfo: () => ({ statusBarHeight: 47, windowWidth: 390 }), getMenuButtonBoundingClientRect: () => ({ top: 51, height: 32, left: 285 }) } })
+  h.page.onLoad()
+  assert.equal(h.page.data.navTop, 47)
+  assert.equal(h.page.data.navHeight, 40)
+  assert.equal(h.page.data.navRight, 117)
+})
+
+test('home uses separate food artwork for shrimp custard and taro toast, with photos taking priority', async () => {
+  const shrimp = toRecipe({ id: 'shrimp', name: '虾仁豆腐蒸蛋', category: '家常菜', duration: 20, difficulty: 'easy', imagePath: 'https://example.com/shrimp.jpg', ingredients: [{ name: '鸡蛋' }, { name: '虾仁' }] })
+  const toast = toRecipe({ id: 'toast', name: '芋泥吐司', category: '早餐', duration: 20, difficulty: 'easy', ingredients: [{ name: '牛奶' }, { name: '鸡蛋' }] })
+  const h = harness('pages/home/index.js', { recipe: { listRecipes: async () => [shrimp, toast] } })
+  await h.page.onShow()
+  assert.equal(h.page.data.todayDishes[0].foodSheetStyle, 'left:0;')
+  assert.equal(h.page.data.todayDishes[1].foodSheetStyle, 'left:-100%;')
+  assert.equal(h.page.data.todayDishes[0].foodEmoji, '🍤')
+  assert.equal(h.page.data.todayDishes[1].foodEmoji, '🍞')
+  assert.equal(h.page.data.todayDishes[0].imagePath, shrimp.imagePath)
+  h.page.onDishImageError({ currentTarget: { dataset: { id: 'shrimp' } } })
+  assert.equal(h.page.data.todayDishes[0].imagePath, '')
+  assert.equal(h.page.data.todayDishes[0].foodSheetStyle, 'left:0;')
 })

@@ -1,17 +1,25 @@
+<template name="dish-thumbnail">
+  <image wx:if="{{dish.imagePath}}" src="{{dish.imagePath}}" data-id="{{dish.id}}" binderror="onDishImageError" class="dish-photo" mode="aspectFill" />
+  <view wx:elif="{{dish.foodSheetStyle}}" class="food-art"><image class="food-sheet" src="/assets/kitchen/home-dishes-v3.png" style="{{dish.foodSheetStyle}}" mode="scaleToFill" /></view>
+  <kitchen-art wx:elif="{{dish.artKind}}" kind="{{dish.artKind}}" art-size="dish-art" size="132" />
+  <view wx:else class="dish-plate" aria-hidden="true"><view class="plate-rim"><text class="food-symbol">{{dish.foodEmoji}}</text><view class="plate-leaf"></view></view></view>
+</template>
+<view class="home-navigation" style="padding-top: {{navTop}}px;"><view class="home-navigation-title" style="height: {{navHeight}}px; padding-left: {{navRight}}px; padding-right: {{navRight}}px;">今天吃什么</view></view>
+<view style="height: {{navTop + navHeight}}px;"></view>
 <view class="page-shell design-page home-page">
   <view class="design-hero">
-    <view class="design-copy"><text class="eyebrow">{{familyName || '家的饭桌'}}</text><view class="page-title">{{userName || '家人'}}，开饭啦</view><text class="design-note">{{todayText}}</text></view>
+    <view class="design-copy"><text class="eyebrow">{{familyName || '家的饭桌'}}</text><view class="page-title">{{greeting}}</view><text class="design-note">{{todayText}}</text></view>
     <view class="hero-picture"><kitchen-art kind="basket" art-size="hero-illustration" size="228" /></view>
   </view>
   <view class="cloud-error-card paper-card" wx:if="{{loadError}}"><text class="cloud-error-title">今天的菜单暂时没加载出来</text><text class="cloud-error-message">{{loadError}}</text><button class="secondary-button cloud-error-retry" bindtap="retryLoad">重新加载</button></view>
   <view class="design-empty paper-card" wx:elif="{{loading}}"><kitchen-art kind="menu" size="230" /><text class="subtle">正在准备今天的菜单…</text></view>
   <block wx:else>
     <view class="today-card paper-card">
-      <view class="design-heading"><text class="section-title">今日菜单</text><view class="design-link" bindtap="openWeekMenu">查看周菜单 <text class="design-chevron">›</text></view></view>
-      <view class="meal-row" wx:for="{{todayDishes}}" wx:key="id" bindtap="openWeekMenu">
-        <text class="meal-label {{item.mealLabel === '荐' ? 'recommend-label' : ''}}">{{item.mealLabel === '早' ? '早餐' : item.mealLabel === '午' ? '午餐' : item.mealLabel === '晚' ? '晚餐' : '推荐'}}</text>
-        <view class="dish-preview"><image wx:if="{{item.imagePath}}" src="{{item.imagePath}}" class="dish-photo" mode="aspectFill" /><kitchen-art wx:else name="{{item.name}}" art-size="dish-illustration" size="132" /></view>
-        <view class="meal-copy"><text class="dish-name">{{item.name}}</text><text class="dish-meta">{{item.mealLabel === '荐' ? '为你推荐 · ' : ''}}{{item.duration}} 分钟</text></view><text class="design-chevron">›</text>
+      <view class="design-heading"><text class="section-title">今日菜单</text><button class="design-link" bindtap="openWeekMenu">查看周菜单 <text class="design-chevron">›</text></button></view>
+      <view class="meal-row" wx:for="{{todayDishes}}" wx:key="displayKey" bindtap="openWeekMenu" role="button" aria-label="{{item.name}}，{{item.mealLabel}}，查看周菜单">
+        <text class="meal-label">{{item.mealLabel}}</text>
+        <view class="dish-preview"><template is="dish-thumbnail" data="{{dish: item}}" /></view>
+        <view class="meal-copy"><text class="dish-name">{{item.name}}</text><text class="dish-meta">{{item.subtitle}}</text></view><text class="design-chevron">›</text>
       </view>
       <view class="design-empty" wx:if="{{!todayDishes.length}}"><kitchen-art kind="menu" art-size="empty-illustration" size="230" /><text class="section-title">今天的餐桌还空着</text><text class="subtle">去周菜单安排一家人的三餐。</text><button class="secondary-button" bindtap="openWeekMenu">安排今天的菜单</button></view>
     </view>
@@ -19,13 +27,18 @@
       <view class="design-heading"><view><text class="section-title">今晚投一票</text><text class="design-note">一家人的胃口，一起商量。</text></view><kitchen-art kind="greensDish" art-size="small-illustration" size="100" /></view>
       <view class="candidate-row" wx:if="{{pollCandidates.length}}">
         <view wx:for="{{pollCandidates}}" wx:key="id" class="candidate-chip {{votedRecipeId === item.id ? 'picked' : ''}}" bindtap="openVote">
-          <view class="candidate-thumb"><image wx:if="{{item.imagePath}}" src="{{item.imagePath}}" class="dish-photo" mode="aspectFill" /><kitchen-art wx:else name="{{item.name}}" art-size="small-illustration" size="100" /></view>
+          <view class="candidate-thumb"><template is="dish-thumbnail" data="{{dish: item}}" /></view>
           <text class="candidate-name">{{item.name}}</text><text class="candidate-vote" wx:if="{{votedRecipeId === item.id}}">✓ 已投</text>
         </view>
       </view>
-      <view class="empty-vote" wx:else>{{voteError || '还没有晚餐投票，家长可发起。'}}</view>
-      <view class="design-link" bindtap="openVote">看票数 <text class="design-chevron">›</text></view>
+      <view class="vote-actions" wx:if="{{pollId}}"><button class="design-link" bindtap="openVote">看票数 <text class="design-chevron">›</text></button></view>
+      <view class="vote-empty-state" wx:else>
+        <block wx:if="{{voteError}}"><text class="empty-vote">{{voteError}}</text><button class="secondary-button vote-retry" bindtap="retryLoad">重新加载投票</button></block>
+        <block wx:elif="{{canCreatePoll}}"><text class="empty-vote">今晚吃什么？选几道菜，让家人一起决定。</text><button class="primary-button vote-create" bindtap="openVote">发起投票</button></block>
+        <text class="empty-vote" wx:else>等待家长发起</text>
+      </view>
     </view>
-    <view class="shopping-card paper-card" bindtap="openShopping"><kitchen-art kind="shopping" art-size="small-illustration" size="100" /><view class="shopping-copy"><text class="shopping-title">本周采购单</text><text class="shopping-note">{{shoppingError ? shoppingError : shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text></view><view class="shopping-action">去看看 <text>›</text></view></view>
+    <view class="shopping-card paper-card" bindtap="openShopping" role="button" aria-label="查看本周采购清单"><kitchen-art kind="shopping" art-size="small-illustration" size="100" /><view class="shopping-copy"><text class="section-title">本周采购单</text><text class="shopping-note">{{shoppingError ? shoppingError : shoppingStale ? '菜单有变化，重新汇总更准确' : (remainingShopping ? remainingShopping + ' 样还没买' : '从厨房到餐桌，把安心备好')}}</text></view><view class="shopping-action">查看清单 <text class="design-chevron">›</text></view></view>
+    <view class="kitchen-tip"><text class="tip-label">今日小贴士</text><text class="tip-copy">采购前先看看冰箱，家里现有的食材也能凑出一顿好饭。</text></view>
   </block>
 </view>

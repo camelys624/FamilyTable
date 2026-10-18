@@ -4,7 +4,8 @@
     "ignore": [],
     "include": [
       { "type": "file", "value": "assets/fridge/illustrations-v2.png" },
-      { "type": "file", "value": "assets/kitchen/illustrations-v2.png" }
+      { "type": "file", "value": "assets/kitchen/illustrations-v2.png" },
+      { "type": "file", "value": "assets/kitchen/home-dishes-v3.png" }
     ]
   },
   "setting": {
