@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-10-18",
+  "method": "Recompress PNG IDAT zlib stream with @gfx/zopfli 1.0.15, numiterations=10; preserve all other chunks and compare all decoded RGBA pixels",
+  "savedBytes": 82788,
+  "previewPackageBytes": 2026702,
+  "remainingBytes": 70450,
+  "minimumHeadroomBytes": 65536,
+  "previewSucceeded": true,
+  "testsPassed": 132,
+  "assets": [
+    {
+      "path": "miniprogram/assets/kitchen/illustrations-v2.png",
+      "beforeBytes": 1083068,
+      "afterBytes": 1041022,
+      "savedBytes": 42046,
+      "width": 1448,
+      "height": 1086,
+      "allRgbaPixelsIdentical": true,
+      "rgbaSha256": "68c1c09c110b74dd7d772f7b20b9846831f559d7418be242ee2680efb2f9777e"
+    },
+    {
+      "path": "miniprogram/assets/fridge/illustrations-v2.png",
+      "beforeBytes": 732631,
+      "afterBytes": 691889,
+      "savedBytes": 40742,
+      "width": 1536,
+      "height": 1024,
+      "allRgbaPixelsIdentical": true,
+      "rgbaSha256": "2daa5b83418eb3b93cdf6cb736f89c7d155e22ae7b40f57c3d79734f439080c9"
+    }
+  ]
+}
