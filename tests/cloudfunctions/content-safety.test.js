@@ -52,7 +52,7 @@ test('moderation diagnostics retain upstream codes without leaking user data or 
 test('self-contained cloud packages have matching moderation and transaction helpers and permissions', () => {
   const root = path.resolve(__dirname, '../../cloudfunctions')
   const common = fs.readFileSync(path.join(root, 'vote/common.js'), 'utf8')
-  for (const domain of ['shopping', 'preference', 'recipe', 'menu', 'fridge']) assert.equal(fs.readFileSync(path.join(root, domain, 'common.js'), 'utf8'), common)
+  for (const domain of ['shopping', 'preference', 'recipe', 'menu', 'fridge', 'recipeProbe']) assert.equal(fs.readFileSync(path.join(root, domain, 'common.js'), 'utf8'), common)
   const safety = fs.readFileSync(path.join(root, 'vote/content-safety.js'), 'utf8')
   for (const domain of ['auth', 'family', 'recipe', 'shopping', 'fridge', 'vote']) {
     assert.equal(fs.readFileSync(path.join(root, domain, 'content-safety.js'), 'utf8'), safety)
